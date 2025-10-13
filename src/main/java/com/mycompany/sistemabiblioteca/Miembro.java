@@ -29,7 +29,6 @@ public class Miembro {
         this.contrasena = contrasena;
     }
 
-    // Getters y Setters
     public long getNoDoc() {
         return noDoc;
     }
@@ -85,8 +84,15 @@ public class Miembro {
     public void setContrasena(String contrasena) {
         this.contrasena = contrasena;
     }
+    
+    public void cambiarContrasena(){
+        
+    }
+    
+    public void cambiarInfoPersonal(){
+        
+    }
 
-    // Método toString para mostrar los datos del miembro
     @Override
     public String toString() {
         return "Miembro {" +
