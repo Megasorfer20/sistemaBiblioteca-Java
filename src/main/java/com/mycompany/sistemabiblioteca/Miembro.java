@@ -3,6 +3,11 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.mycompany.sistemabiblioteca;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 /**
  *
@@ -91,6 +96,20 @@ public class Miembro {
     
     public void cambiarInfoPersonal(){
         
+    }
+    
+    public Miembro login(){
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream("Miembros.txt");
+         BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+
+        String linea;
+        while ((linea = reader.readLine()) != null) {
+            System.out.println(linea);
+        }
+    } catch (IOException | NullPointerException e) {
+        e.printStackTrace();
+    }
+        return this;
     }
 
     @Override
