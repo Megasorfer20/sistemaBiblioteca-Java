@@ -178,7 +178,7 @@ public class Miembro {
             for (int i = 0; i < lines.size(); i++) {
                 String line = lines.get(i);
                 String[] parts = line.split("\\\\");
-                if (parts.length >= 7) {
+                if (parts.length >= 7) { // Mínimo 7 partes para un Miembro base
                     String usuarioLinea = parts[5].trim();
                     long noDocLinea = -1;
                     try {
@@ -204,8 +204,9 @@ public class Miembro {
                             lines.remove(i);
                             i--; // ajustar índice tras eliminación
                         } else {
-                            // Reemplazar línea por la representación actual
-                            String nuevaLinea = buildLine();
+                            // Reemplazar línea por la representación actual.
+                            // Aquí se usa this.buildLine(), que será el de Usuario si this es un Usuario.
+                            String nuevaLinea = this.buildLine();
                             lines.set(i, nuevaLinea);
                         }
                         found = true;
@@ -217,7 +218,7 @@ public class Miembro {
             if (!found) {
                 // Si no se encontró y usuario no está vacío -> agregar al final
                 if (this.usuario != null && !this.usuario.trim().isEmpty()) {
-                    lines.add(buildLine());
+                    lines.add(this.buildLine()); // Usa this.buildLine()
                 }
                 // Si no se encontró y usuario está vacío -> nada que eliminar
             }
@@ -246,6 +247,7 @@ public class Miembro {
 
     // Construye la representación en el formato esperado por login:
     // noDoc\tipoDoc\rol\nombre\apellido\ usuario\contrasena
+    // Este método es protegido para que las subclases puedan extenderlo.
     protected String buildLine() {
         StringBuilder sb = new StringBuilder();
         sb.append(this.noDoc).append("\\")
@@ -280,6 +282,7 @@ public class Miembro {
     public String login(String usuarioIngresado, String contrasenaIngresada) {
         Path path = resolveMiembrosPath();
         if (!Files.exists(path)) {
+            System.err.println("Advertencia: Archivo Miembros.txt no encontrado en " + path.toAbsolutePath());
             return ""; // File doesn't exist
         }
 
@@ -317,6 +320,7 @@ public class Miembro {
             String linea;
             while ((linea = reader.readLine()) != null) {
                 String[] parts = linea.split("\\\\");
+                // Mínimo 7 partes para un Miembro base. Un Usuario tendrá más (mínimo 10).
                 if (parts.length >= 7) {
                     try {
                         long noDoc = Long.parseLong(parts[0].trim());
@@ -327,11 +331,27 @@ public class Miembro {
                         String usuario = parts[5].trim();
                         String contrasena = parts[6].trim(); // This is the hashed password
 
-                        // Construye la instancia correcta basada en el rol
                         if (rol == 0) {
                             miembros.add(new Admin(tipoDoc, noDoc, rol, nombre, apellido, usuario, contrasena));
                         } else {
-                            miembros.add(new Usuario(tipoDoc, noDoc, rol, nombre, apellido, usuario, contrasena));
+                            // Si es un Usuario, intentamos leer los campos adicionales
+                            double deuda = 0.0;
+                            String sedeUniversidad = "";
+                            String carrera = "";
+                            // Un Usuario debe tener al menos 10 partes si se guardan todos los campos.
+                            if (parts.length >= 10) {
+                                try {
+                                    deuda = Double.parseDouble(parts[7].trim());
+                                    sedeUniversidad = parts[8].trim();
+                                    carrera = parts[9].trim();
+                                } catch (NumberFormatException e) {
+                                    System.err.println("Error parsing Usuario specific fields in line: " + linea + " - "
+                                            + e.getMessage());
+                                    // Fallback to default values if parsing fails
+                                }
+                            }
+                            miembros.add(new Usuario(tipoDoc, noDoc, rol, nombre, apellido, usuario, contrasena, deuda,
+                                    sedeUniversidad, carrera));
                         }
                     } catch (NumberFormatException e) {
                         System.err.println("Error parsing member line: " + linea + " - " + e.getMessage());

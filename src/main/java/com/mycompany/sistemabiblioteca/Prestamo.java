@@ -36,7 +36,8 @@ public class Prestamo {
     public Prestamo() {
     }
 
-    public Prestamo(String codigoLibro, long noDocMiembro, Date fechaPrestamo, Date fechaDevolucionEstimada, int idBiblioteca) {
+    public Prestamo(String codigoLibro, long noDocMiembro, Date fechaPrestamo, Date fechaDevolucionEstimada,
+            int idBiblioteca) {
         this.codigoLibro = codigoLibro;
         this.noDocMiembro = noDocMiembro;
         this.fechaPrestamo = fechaPrestamo;
@@ -47,7 +48,8 @@ public class Prestamo {
     }
 
     // Constructor para cargar desde archivo
-    public Prestamo(String codigoLibro, long noDocMiembro, Date fechaPrestamo, Date fechaDevolucionEstimada, Date fechaDevolucionReal, int idBiblioteca, String estado) {
+    public Prestamo(String codigoLibro, long noDocMiembro, Date fechaPrestamo, Date fechaDevolucionEstimada,
+            Date fechaDevolucionReal, int idBiblioteca, String estado) {
         this.codigoLibro = codigoLibro;
         this.noDocMiembro = noDocMiembro;
         this.fechaPrestamo = fechaPrestamo;
@@ -121,13 +123,13 @@ public class Prestamo {
         return String.format("%s\\%d\\%s\\%s\\%s\\%d\\%s",
                 codigoLibro,
                 noDocMiembro,
-                Fecha.DATE_FORMAT.format(fechaPrestamo),
-                Fecha.DATE_FORMAT.format(fechaDevolucionEstimada),
-                fechaDevolucionReal != null ? Fecha.DATE_FORMAT.format(fechaDevolucionReal) : "null", // "null" si no devuelto
+                Fecha.formatDate(fechaPrestamo),
+                Fecha.formatDate(fechaDevolucionEstimada),
+                Fecha.formatDate(fechaDevolucionReal), // Usa Fecha.formatDate para null también
                 idBiblioteca,
                 estado);
     }
-    
+
     // Guarda o actualiza el registro del préstamo.
     public synchronized void save() {
         try {
@@ -139,14 +141,18 @@ public class Prestamo {
 
             List<String> normalized = new ArrayList<>();
             for (String l : lines) {
-                if (l != null && !l.trim().isEmpty()) normalized.add(l);
+                if (l != null && !l.trim().isEmpty())
+                    normalized.add(l);
             }
             lines = normalized;
 
             boolean found = false;
-            // Usar un identificador único para el préstamo (libro, miembro, fecha de préstamo)
-            // Se asume que no puede haber dos préstamos del mismo libro al mismo miembro en la misma fecha de préstamo.
-            String uniqueLoanIdentifier = this.codigoLibro + "_" + this.noDocMiembro + "_" + Fecha.DATE_FORMAT.format(this.fechaPrestamo);
+            // Usar un identificador único para el préstamo (libro, miembro, fecha de
+            // préstamo)
+            // Se asume que no puede haber dos préstamos del mismo libro al mismo miembro en
+            // la misma fecha de préstamo.
+            String uniqueLoanIdentifier = this.codigoLibro + "_" + this.noDocMiembro + "_"
+                    + Fecha.formatDate(this.fechaPrestamo);
 
             for (int i = 0; i < lines.size(); i++) {
                 String line = lines.get(i);
@@ -155,9 +161,10 @@ public class Prestamo {
                     try {
                         String lineCodigoLibro = parts[0].trim();
                         long lineNoDocMiembro = Long.parseLong(parts[1].trim());
-                        Date lineFechaPrestamo = Fecha.DATE_FORMAT.parse(parts[2].trim());
-                        
-                        String lineIdentifier = lineCodigoLibro + "_" + lineNoDocMiembro + "_" + Fecha.DATE_FORMAT.format(lineFechaPrestamo);
+                        Date lineFechaPrestamo = Fecha.parseDate(parts[2].trim());
+
+                        String lineIdentifier = lineCodigoLibro + "_" + lineNoDocMiembro + "_"
+                                + Fecha.formatDate(lineFechaPrestamo);
 
                         if (lineIdentifier.equals(uniqueLoanIdentifier)) {
                             lines.set(i, buildLine()); // Actualizar la línea
@@ -173,7 +180,7 @@ public class Prestamo {
             if (!found) {
                 lines.add(buildLine()); // Agregar nuevo préstamo
             }
-            
+
             Path parent = path.getParent();
             if (parent != null && !Files.exists(parent)) {
                 try {
@@ -182,7 +189,8 @@ public class Prestamo {
                     System.err.println("Error creating directory for LibroPrestado.txt: " + ex.getMessage());
                 }
             }
-            Files.write(path, lines, java.nio.charset.StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            Files.write(path, lines, java.nio.charset.StandardCharsets.UTF_8, StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING);
 
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -191,7 +199,7 @@ public class Prestamo {
 
     // Elimina un registro de préstamo.
     public synchronized void delete() {
-         try {
+        try {
             Path path = resolveLibroPrestadoPath();
             List<String> lines = new ArrayList<>();
             if (Files.exists(path)) {
@@ -200,11 +208,13 @@ public class Prestamo {
 
             List<String> normalized = new ArrayList<>();
             for (String l : lines) {
-                if (l != null && !l.trim().isEmpty()) normalized.add(l);
+                if (l != null && !l.trim().isEmpty())
+                    normalized.add(l);
             }
             lines = normalized;
-            
-            String uniqueLoanIdentifier = this.codigoLibro + "_" + this.noDocMiembro + "_" + Fecha.DATE_FORMAT.format(this.fechaPrestamo);
+
+            String uniqueLoanIdentifier = this.codigoLibro + "_" + this.noDocMiembro + "_"
+                    + Fecha.formatDate(this.fechaPrestamo);
 
             List<String> updatedLines = new ArrayList<>();
             for (String line : lines) {
@@ -213,9 +223,10 @@ public class Prestamo {
                     try {
                         String lineCodigoLibro = parts[0].trim();
                         long lineNoDocMiembro = Long.parseLong(parts[1].trim());
-                        Date lineFechaPrestamo = Fecha.DATE_FORMAT.parse(parts[2].trim());
-                        String lineIdentifier = lineCodigoLibro + "_" + lineNoDocMiembro + "_" + Fecha.DATE_FORMAT.format(lineFechaPrestamo);
-                        
+                        Date lineFechaPrestamo = Fecha.parseDate(parts[2].trim());
+                        String lineIdentifier = lineCodigoLibro + "_" + lineNoDocMiembro + "_"
+                                + Fecha.formatDate(lineFechaPrestamo);
+
                         if (!lineIdentifier.equals(uniqueLoanIdentifier)) {
                             updatedLines.add(line);
                         }
@@ -227,7 +238,7 @@ public class Prestamo {
                     updatedLines.add(line); // Mantener líneas mal formadas para inspección manual
                 }
             }
-            
+
             Path parent = path.getParent();
             if (parent != null && !Files.exists(parent)) {
                 try {
@@ -236,7 +247,8 @@ public class Prestamo {
                     System.err.println("Error creating directory for LibroPrestado.txt: " + ex.getMessage());
                 }
             }
-            Files.write(path, updatedLines, java.nio.charset.StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            Files.write(path, updatedLines, java.nio.charset.StandardCharsets.UTF_8, StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING);
 
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -259,13 +271,14 @@ public class Prestamo {
                     try {
                         String codigoLibro = parts[0].trim();
                         long noDocMiembro = Long.parseLong(parts[1].trim());
-                        Date fechaPrestamo = Fecha.DATE_FORMAT.parse(parts[2].trim());
-                        Date fechaDevolucionEstimada = Fecha.DATE_FORMAT.parse(parts[3].trim());
-                        Date fechaDevolucionReal = "null".equals(parts[4].trim()) ? null : Fecha.DATE_FORMAT.parse(parts[4].trim());
+                        Date fechaPrestamo = Fecha.parseDate(parts[2].trim());
+                        Date fechaDevolucionEstimada = Fecha.parseDate(parts[3].trim());
+                        Date fechaDevolucionReal = Fecha.parseDate(parts[4].trim()); // Usa Fecha.parseDate
                         int idBiblioteca = Integer.parseInt(parts[5].trim());
                         String estado = parts[6].trim();
 
-                        prestamos.add(new Prestamo(codigoLibro, noDocMiembro, fechaPrestamo, fechaDevolucionEstimada, fechaDevolucionReal, idBiblioteca, estado));
+                        prestamos.add(new Prestamo(codigoLibro, noDocMiembro, fechaPrestamo, fechaDevolucionEstimada,
+                                fechaDevolucionReal, idBiblioteca, estado));
                     } catch (NumberFormatException | ParseException e) {
                         System.err.println("Error parsing loan line: " + linea + " - " + e.getMessage());
                     }
@@ -283,11 +296,12 @@ public class Prestamo {
                 .filter(p -> p.getNoDocMiembro() == noDocMiembro)
                 .collect(Collectors.toList());
     }
-    
+
     // Encuentra un préstamo activo de un libro por un miembro.
     public static Prestamo findActivePrestamo(long noDocMiembro, String codigoLibro) {
         return loadAllPrestamos().stream()
-                .filter(p -> p.getNoDocMiembro() == noDocMiembro && p.getCodigoLibro().equals(codigoLibro) && "PRESTADO".equals(p.getEstado()))
+                .filter(p -> p.getNoDocMiembro() == noDocMiembro && p.getCodigoLibro().equals(codigoLibro)
+                        && "PRESTADO".equals(p.getEstado()))
                 .findFirst()
                 .orElse(null);
     }
@@ -297,9 +311,9 @@ public class Prestamo {
         return "Prestamo {" +
                 "  Libro Código='" + codigoLibro + '\'' +
                 ", Miembro Doc=" + noDocMiembro +
-                ", Fecha Prestamo=" + Fecha.DATE_FORMAT.format(fechaPrestamo) +
-                ", Fecha Devolución Estimada=" + Fecha.DATE_FORMAT.format(fechaDevolucionEstimada) +
-                ", Fecha Devolución Real=" + (fechaDevolucionReal != null ? Fecha.DATE_FORMAT.format(fechaDevolucionReal) : "N/A") +
+                ", Fecha Prestamo=" + Fecha.formatDate(fechaPrestamo) +
+                ", Fecha Devolución Estimada=" + Fecha.formatDate(fechaDevolucionEstimada) +
+                ", Fecha Devolución Real=" + Fecha.formatDate(fechaDevolucionReal) +
                 ", ID Biblioteca=" + idBiblioteca +
                 ", Estado='" + estado + '\'' +
                 '}';
