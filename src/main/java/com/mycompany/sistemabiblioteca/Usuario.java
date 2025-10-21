@@ -10,14 +10,14 @@ package com.mycompany.sistemabiblioteca;
  */
 public class Usuario extends Miembro {
     
-    private int noLibroPrestados;
+    // private int noLibroPrestados;
     public int deuda;
     
     public Usuario(){}
     
     public Usuario(byte tipoDoc, long noDoc, byte rol, String nombre, String apellido, String usuario, String contrasena, int deuda, int noLibroPrestados ) {
         super(tipoDoc, noDoc, rol, nombre, apellido, usuario, contrasena);
-        this.noLibroPrestados = noLibroPrestados;
+        // this.noLibroPrestados = noLibroPrestados;
         this.deuda = deuda;
     }
     
