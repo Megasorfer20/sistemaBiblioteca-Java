@@ -4,10 +4,23 @@
  */
 package com.mycompany.sistemabiblioteca;
 
+/**
+ *
+ * @author edrui
+ */
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -17,7 +30,7 @@ public class Miembro {
 
     protected long noDoc;
     protected byte tipoDoc;
-    protected byte rol;
+    protected byte rol; // 0: Admin, 1: Estudiante, 2: Profesor, 3: Administrativo
     protected String nombre;
     protected String apellido;
     protected String usuario;
@@ -26,7 +39,8 @@ public class Miembro {
     public Miembro() {
     }
 
-    public Miembro(byte tipoDoc, long noDoc, byte rol, String nombre, String apellido, String usuario, String contrasena) {
+    public Miembro(byte tipoDoc, long noDoc, byte rol, String nombre, String apellido, String usuario,
+            String contrasena) {
         this.tipoDoc = tipoDoc;
         this.noDoc = noDoc;
         this.rol = rol;
@@ -50,7 +64,7 @@ public class Miembro {
     public void setNoDoc(long noDoc) {
         long oldNoDoc = this.noDoc;
         this.noDoc = noDoc;
-        saveInternal(null, oldNoDoc);
+        saveInternal(null, oldNoDoc); // saveInternal is designed to handle changes to noDoc
     }
 
     public byte getTipoDoc() {
@@ -113,14 +127,16 @@ public class Miembro {
             save();
         } else {
             // fallback: no se guarda si falla el hash
-            this.contrasena = contrasena;
+            this.contrasena = contrasena; // Keep original if hash fails, maybe log error
             save();
         }
     }
 
-    public void cambiarInfoPersonal() {
-        // Método vacío para la lógica de interacción (p. ej. pedir datos al usuario).
-        // Cuando se modifiquen campos, sus setters ya realizan save().
+    public void cambiarInfoPersonal(byte newTipoDoc, String newNombre, String newApellido) {
+        this.setTipoDoc(newTipoDoc);
+        this.setNombre(newNombre);
+        this.setApellido(newApellido);
+        // The individual setters already call save()
     }
 
     public void cambiarContrasena(String nuevaContrasena) {
@@ -137,20 +153,23 @@ public class Miembro {
         saveInternal(null, this.noDoc);
     }
 
-    // Guarda/actualiza utilizando información extra sobre usuario antiguo o nro documento antiguo.
-    // oldUsuario puede ser null; oldNoDoc se usa como respaldo para encontrar la línea si oldUsuario es null/empty.
-    private synchronized void saveInternal(String oldUsuario, long oldNoDoc) {
+    // Guarda/actualiza utilizando información extra sobre usuario antiguo o nro
+    // documento antiguo.
+    // oldUsuario puede ser null; oldNoDoc se usa como respaldo para encontrar la
+    // línea si oldUsuario es null/empty.
+    protected synchronized void saveInternal(String oldUsuario, long oldNoDoc) {
         try {
-            java.nio.file.Path path = resolveMiembrosPath();
-            java.util.List<String> lines = new java.util.ArrayList<>();
-            if (java.nio.file.Files.exists(path)) {
-                lines = new java.util.ArrayList<>(java.nio.file.Files.readAllLines(path, java.nio.charset.StandardCharsets.UTF_8));
+            Path path = resolveMiembrosPath();
+            List<String> lines = new ArrayList<>();
+            if (Files.exists(path)) {
+                lines = new ArrayList<>(Files.readAllLines(path, java.nio.charset.StandardCharsets.UTF_8));
             }
 
             // Normaliza las líneas (quita líneas vacías)
-            java.util.List<String> normalized = new java.util.ArrayList<>();
+            List<String> normalized = new ArrayList<>();
             for (String l : lines) {
-                if (l != null && !l.trim().isEmpty()) normalized.add(l);
+                if (l != null && !l.trim().isEmpty())
+                    normalized.add(l);
             }
             lines = normalized;
 
@@ -164,14 +183,15 @@ public class Miembro {
                     long noDocLinea = -1;
                     try {
                         noDocLinea = Long.parseLong(parts[0].trim());
-                    } catch (Exception ex) {
+                    } catch (NumberFormatException ex) {
                         // ignorar parseo si falla
                     }
                     boolean match = false;
                     if (oldUsuario != null && !oldUsuario.trim().isEmpty()) {
                         match = usuarioLinea.equals(oldUsuario.trim());
                     } else if (this.usuario != null && !this.usuario.trim().isEmpty()) {
-                        // si no tenemos oldUsuario, intentar emparejar por el usuario actual (actualización directa)
+                        // si no tenemos oldUsuario, intentar emparejar por el usuario actual
+                        // (actualización directa)
                         match = usuarioLinea.equals(this.usuario.trim());
                     } else {
                         // si usuario actual es vacío/nulo, intentar emparejar por documento antiguo
@@ -203,27 +223,30 @@ public class Miembro {
             }
 
             // Escribir archivo sin líneas vacías
-            java.util.List<String> toWrite = new java.util.ArrayList<>();
+            List<String> toWrite = new ArrayList<>();
             for (String l : lines) {
-                if (l != null && !l.trim().isEmpty()) toWrite.add(l);
+                if (l != null && !l.trim().isEmpty())
+                    toWrite.add(l);
             }
             // Asegura que el directorio exista
-            java.nio.file.Path parent = path.getParent();
-            if (parent != null && !java.nio.file.Files.exists(parent)) {
+            Path parent = path.getParent();
+            if (parent != null && !Files.exists(parent)) {
                 try {
-                    java.nio.file.Files.createDirectories(parent);
-                } catch (Exception ex) {
-                    // ignorar si no se puede crear; tratamos de escribir igual
+                    Files.createDirectories(parent);
+                } catch (IOException ex) {
+                    System.err.println("Error creating directory for Miembros.txt: " + ex.getMessage());
                 }
             }
-            java.nio.file.Files.write(path, toWrite, java.nio.charset.StandardCharsets.UTF_8, java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.TRUNCATE_EXISTING);
-        } catch (Exception ex) {
+            Files.write(path, toWrite, java.nio.charset.StandardCharsets.UTF_8, StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException ex) {
             ex.printStackTrace();
         }
     }
 
-    // Construye la representación en el formato esperado por login: noDoc\tipoDoc\rol\nombre\apellido\ usuario\contrasena
-    private String buildLine() {
+    // Construye la representación en el formato esperado por login:
+    // noDoc\tipoDoc\rol\nombre\apellido\ usuario\contrasena
+    protected String buildLine() {
         StringBuilder sb = new StringBuilder();
         sb.append(this.noDoc).append("\\")
                 .append(this.tipoDoc).append("\\")
@@ -238,12 +261,12 @@ public class Miembro {
     // Intenta resolver la ruta del recurso Miembros.txt en el sistema de archivos.
     // Si el recurso está empaquetado (p. ej. dentro de un JAR) o no se encuentra,
     // utiliza el archivo "Miembros.txt" en el directorio de trabajo.
-    private java.nio.file.Path resolveMiembrosPath() {
+    protected static Path resolveMiembrosPath() {
         try {
-            java.net.URL res = getClass().getClassLoader().getResource("Miembros.txt");
+            java.net.URL res = Miembro.class.getClassLoader().getResource("Miembros.txt");
             if (res != null && "file".equalsIgnoreCase(res.getProtocol())) {
                 try {
-                    return java.nio.file.Paths.get(res.toURI());
+                    return Paths.get(res.toURI());
                 } catch (Exception ex) {
                     // fallback a user.dir
                 }
@@ -251,25 +274,27 @@ public class Miembro {
         } catch (Exception ex) {
             // ignore and fallback
         }
-        return java.nio.file.Paths.get(System.getProperty("user.dir"), "Miembros.txt");
+        return Paths.get(System.getProperty("user.dir"), "Miembros.txt");
     }
 
     public String login(String usuarioIngresado, String contrasenaIngresada) {
-        InputStream is = getClass().getClassLoader().getResourceAsStream("Miembros.txt");
-        if (is == null) {
-            return "";
+        Path path = resolveMiembrosPath();
+        if (!Files.exists(path)) {
+            return ""; // File doesn't exist
         }
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+        try (BufferedReader reader = Files.newBufferedReader(path, java.nio.charset.StandardCharsets.UTF_8)) {
             String linea;
             while ((linea = reader.readLine()) != null) {
                 // Separa por '\' (en Java hay que escapar la barra invertida)
                 String[] parts = linea.split("\\\\");
-                // Según el orden: noDoc(0), tipoDoc(1), rol(2), nombre(3), apellido(4), usuario(5), contrasena(6)
+                // Según el orden: noDoc(0), tipoDoc(1), rol(2), nombre(3), apellido(4),
+                // usuario(5), contrasena(6)
                 if (parts.length >= 7) {
                     String usuario = parts[5].trim();
                     String contrasenaAlmacenada = parts[6].trim();
-                    if (usuario.equals(usuarioIngresado.trim()) && verifyPassword(contrasenaIngresada, contrasenaAlmacenada)) {
+                    if (usuario.equals(usuarioIngresado.trim())
+                            && verifyPassword(contrasenaIngresada, contrasenaAlmacenada)) {
                         return linea; // devuelve la línea completa que coincide
                     }
                 }
@@ -278,6 +303,65 @@ public class Miembro {
             e.printStackTrace();
         }
         return "";
+    }
+
+    // --- Static methods for loading members ---
+    public static List<Miembro> loadAllMembers() {
+        List<Miembro> miembros = new ArrayList<>();
+        Path path = resolveMiembrosPath();
+        if (!Files.exists(path)) {
+            return miembros;
+        }
+
+        try (BufferedReader reader = Files.newBufferedReader(path, java.nio.charset.StandardCharsets.UTF_8)) {
+            String linea;
+            while ((linea = reader.readLine()) != null) {
+                String[] parts = linea.split("\\\\");
+                if (parts.length >= 7) {
+                    try {
+                        long noDoc = Long.parseLong(parts[0].trim());
+                        byte tipoDoc = Byte.parseByte(parts[1].trim());
+                        byte rol = Byte.parseByte(parts[2].trim());
+                        String nombre = parts[3].trim();
+                        String apellido = parts[4].trim();
+                        String usuario = parts[5].trim();
+                        String contrasena = parts[6].trim(); // This is the hashed password
+
+                        // Construye la instancia correcta basada en el rol
+                        if (rol == 0) {
+                            miembros.add(new Admin(tipoDoc, noDoc, rol, nombre, apellido, usuario, contrasena));
+                        } else {
+                            miembros.add(new Usuario(tipoDoc, noDoc, rol, nombre, apellido, usuario, contrasena));
+                        }
+                    } catch (NumberFormatException e) {
+                        System.err.println("Error parsing member line: " + linea + " - " + e.getMessage());
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return miembros;
+    }
+
+    public static Miembro findMemberByUsername(String username) {
+        List<Miembro> allMembers = loadAllMembers();
+        for (Miembro miembro : allMembers) {
+            if (miembro.getUsuario().equalsIgnoreCase(username.trim())) {
+                return miembro;
+            }
+        }
+        return null;
+    }
+
+    public static Miembro findMemberByNoDoc(long noDoc) {
+        List<Miembro> allMembers = loadAllMembers();
+        for (Miembro miembro : allMembers) {
+            if (miembro.getNoDoc() == noDoc) {
+                return miembro;
+            }
+        }
+        return null;
     }
 
     // --- Helpers para hashing/verificación PBKDF2 ---
@@ -295,11 +379,12 @@ public class Miembro {
 
             // Calcula el hash PBKDF2 con los parámetros anteriores
             byte[] hash = pbkdf2(password.toCharArray(), salt, iterations, keyLength);
-            if (hash == null) return null;
+            if (hash == null)
+                return null;
 
             // Codifica salt y hash en Base64 para almacenarlos como texto
-            String saltB64 = java.util.Base64.getEncoder().encodeToString(salt);
-            String hashB64 = java.util.Base64.getEncoder().encodeToString(hash);
+            String saltB64 = Base64.getEncoder().encodeToString(salt);
+            String hashB64 = Base64.getEncoder().encodeToString(hash);
             // Devuelve la representación que incluye iteraciones, salt y hash
             return iterations + ":" + saltB64 + ":" + hashB64;
         } catch (Exception ex) {
@@ -314,15 +399,17 @@ public class Miembro {
         try {
             // Separa la cadena almacenada en sus partes
             String[] parts = stored.split(":");
-            if (parts.length != 3) return false;
+            if (parts.length != 3)
+                return false;
             // Recupera las iteraciones y decodifica el salt y el hash almacenado
             int iterations = Integer.parseInt(parts[0]);
-            byte[] salt = java.util.Base64.getDecoder().decode(parts[1]);
-            byte[] hashStored = java.util.Base64.getDecoder().decode(parts[2]);
+            byte[] salt = Base64.getDecoder().decode(parts[1]);
+            byte[] hashStored = Base64.getDecoder().decode(parts[2]);
 
             // Calcula el hash de intento con los mismos parámetros (longitud en bits)
             byte[] hashAttempt = pbkdf2(password.toCharArray(), salt, iterations, hashStored.length * 8);
-            if (hashAttempt == null) return false;
+            if (hashAttempt == null)
+                return false;
 
             // Comparación en tiempo-constante para evitar ataques por cronometraje
             int diff = hashStored.length ^ hashAttempt.length;
@@ -338,10 +425,10 @@ public class Miembro {
 
     // Implementación de PBKDF2 que devuelve los bytes derivados.
     // Parámetros:
-    //  - password: contraseña como array de caracteres
-    //  - salt: salt aleatorio
-    //  - iterations: número de iteraciones del algoritmo
-    //  - keyLength: longitud de la clave en bits
+    // - password: contraseña como array de caracteres
+    // - salt: salt aleatorio
+    // - iterations: número de iteraciones del algoritmo
+    // - keyLength: longitud de la clave en bits
     private byte[] pbkdf2(char[] password, byte[] salt, int iterations, int keyLength) {
         try {
             // PBEKeySpec construye la especificación con los parámetros dados
@@ -356,8 +443,6 @@ public class Miembro {
         }
     }
 
-    
-
     @Override
     public String toString() {
         return "Miembro {"
@@ -367,7 +452,10 @@ public class Miembro {
                 + "\n  Nombre: " + nombre
                 + "\n  Apellido: " + apellido
                 + "\n  Usuario: " + usuario
-                + "\n  Contraseña: " + contrasena
+                + "\n  Contraseña: " + (contrasena != null && !contrasena.isEmpty() ? "[HASHED]" : "[EMPTY]") // Avoid
+                                                                                                              // printing
+                                                                                                              // raw
+                                                                                                              // hash
                 + "\n}";
     }
 }
