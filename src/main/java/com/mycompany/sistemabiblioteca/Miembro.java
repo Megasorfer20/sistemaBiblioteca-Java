@@ -222,7 +222,7 @@ public class Miembro {
         }
     }
 
-    // Construye la representación en el formato esperado por login: noDoc\tipoDoc\rol\nombre\apellido\usuario\contrasena
+    // Construye la representación en el formato esperado por login: noDoc\tipoDoc\rol\nombre\apellido\ usuario\contrasena
     private String buildLine() {
         StringBuilder sb = new StringBuilder();
         sb.append(this.noDoc).append("\\")
