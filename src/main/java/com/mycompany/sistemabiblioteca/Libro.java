@@ -13,56 +13,117 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID; // For generating unique codes if needed
 import java.util.stream.Collectors;
 
 /**
  * Clase para representar un libro en la biblioteca.
+ * Implementa IPersistible para el manejo de guardado y eliminacion.
  *
  * @author edrui
  */
-public class Libro {
+public class Libro implements IPersistible {
     private String nombre;
     private String autor;
     private String codigo; // ID del libro
-    private int unLibres; // Unidades libres disponibles
-    private int unPrestadas; // Unidades actualmente prestadas
+    private int unidadesLibres;
+    private int unidadesPrestadas;
     private int idBiblioteca; // ID de la biblioteca a la que pertenece el libro
     private String sedeBiblioteca; // Sede de la biblioteca a la que pertenece el libro
 
     public Libro() {
     }
 
-    // Constructor para la creación inicial de un libro
-    public Libro(String nombre, String autor, String codigo, int unLibres, int idBiblioteca, String sedeBiblioteca) {
-        this.nombre = nombre;
-        this.autor = autor;
-        this.codigo = codigo != null && !codigo.isEmpty() ? codigo : generateUniqueCode(); // Si no se provee, generar
-        this.unLibres = unLibres;
-        this.unPrestadas = 0; // Inicialmente 0 unidades prestadas
-        this.idBiblioteca = idBiblioteca;
-        this.sedeBiblioteca = sedeBiblioteca;
-    }
-
-    // Constructor para cargar un libro desde archivo (incluye unPrestadas)
-    public Libro(String nombre, String autor, String codigo, int unLibres, int unPrestadas, int idBiblioteca,
+    // Constructor para la creacion inicial de un libro (con codigo generado o
+    // provisto)
+    public Libro(String nombre, String autor, String codigo, int unidadesTotales, int idBiblioteca,
             String sedeBiblioteca) {
         this.nombre = nombre;
         this.autor = autor;
         this.codigo = codigo;
-        this.unLibres = unLibres;
-        this.unPrestadas = unPrestadas;
+        this.unidadesLibres = unidadesTotales;
+        this.unidadesPrestadas = 0;
         this.idBiblioteca = idBiblioteca;
         this.sedeBiblioteca = sedeBiblioteca;
     }
 
-    // Método para generar un código único si es necesario
-    private String generateUniqueCode() {
-        return UUID.randomUUID().toString();
+    // Constructor para cargar un libro desde archivo
+    public Libro(String nombre, String autor, String codigo, int unidadesLibres, int unidadesPrestadas,
+            int idBiblioteca,
+            String sedeBiblioteca) {
+        this.nombre = nombre;
+        this.autor = autor;
+        this.codigo = codigo;
+        this.unidadesLibres = unidadesLibres;
+        this.unidadesPrestadas = unidadesPrestadas;
+        this.idBiblioteca = idBiblioteca;
+        this.sedeBiblioteca = sedeBiblioteca;
+    }
+
+    // --- Metodo para generar un codigo unico y auto-incremental ---
+    /**
+     * Genera el siguiente codigo de libro unico y auto-incremental para una
+     * biblioteca dada.
+     * Formato: ID_BIB-INICIAL_SEDE-NUMERO_SECUENCIAL
+     */
+    public static String generarSiguienteCodigoLibro(int idBiblioteca, String sedeBiblioteca) {
+        List<Libro> todosLosLibros = cargarTodosLosLibros();
+        long maxNumeroSecuencial = 0;
+
+        // El codigo debe ser "Id de la biblioteca - Inicial de la localidad de la
+        // Biblioteca - Cantidad de libros - Id atoincremental del libro"
+        // Interpreto "Cantidad de libros" como parte del numero secuencial o
+        // simplemente el numero secuencial mismo.
+        // Para que sea un ID estable, usaremos: ID_BIB-INICIAL_SEDE-NUMERO_SECUENCIAL
+        // Donde el numero secuencial es incremental y unico dentro de esa biblioteca (o
+        // global si se desea).
+        // Optare por un numero secuencial global para simplificar, pero filtrando por
+        // el prefijo para mantener el formato.
+
+        String prefijoLibro = String.valueOf(idBiblioteca) + "-" + sedeBiblioteca.substring(0, 1).toUpperCase();
+
+        for (Libro libro : todosLosLibros) {
+            if (libro.getCodigo().startsWith(prefijoLibro)) {
+                String[] parts = libro.getCodigo().split("-");
+                if (parts.length == 3) {
+                    try {
+                        long currentNum = Long.parseLong(parts[2]);
+                        if (currentNum > maxNumeroSecuencial) {
+                            maxNumeroSecuencial = currentNum;
+                        }
+                    } catch (NumberFormatException e) {
+                        // Ignorar codigos mal formados
+                    }
+                }
+            }
+        }
+
+        // Para ser mas robustos y globales, podriamos revisar todos los codigos si el
+        // formato siempre tiene 3 partes
+        // y el ultimo es el numerico. Para el ejemplo, asumiremos que los codigos
+        // generados seguiran el formato.
+        // Para una maxima robustez global independiente de la biblioteca, solo tomar el
+        // maximo de todos los numeros finales.
+        if (maxNumeroSecuencial == 0) { // Si no hay libros, o no hay libros con el prefijo, buscar el maximo de todos.
+            for (Libro libro : todosLosLibros) {
+                String[] parts = libro.getCodigo().split("-");
+                if (parts.length >= 2) { // Asumimos que al menos el ultimo es numerico
+                    try {
+                        // Intentamos tomar la ultima parte como ID secuencial, si no, un UUID.
+                        long currentNum = Long.parseLong(parts[parts.length - 1]);
+                        if (currentNum > maxNumeroSecuencial) {
+                            maxNumeroSecuencial = currentNum;
+                        }
+                    } catch (NumberFormatException e) {
+                        // Ignorar codigos mal formados o que no son numericos al final.
+                    }
+                }
+            }
+        }
+
+        return prefijoLibro + "-" + (maxNumeroSecuencial + 1);
     }
 
     // Getters
@@ -78,12 +139,12 @@ public class Libro {
         return codigo;
     }
 
-    public int getUnLibres() {
-        return unLibres;
+    public int getUnidadesLibres() {
+        return unidadesLibres;
     }
 
-    public int getUnPrestadas() {
-        return unPrestadas;
+    public int getUnidadesPrestadas() {
+        return unidadesPrestadas;
     }
 
     public int getIdBiblioteca() {
@@ -94,82 +155,69 @@ public class Libro {
         return sedeBiblioteca;
     }
 
-    // Setters (que invocan save() si modifican un atributo persistente)
+    // Setters (que invocan guardar() si modifican un atributo persistente)
     public void setNombre(String nombre) {
         this.nombre = nombre;
-        save();
+        guardar();
     }
 
     public void setAutor(String autor) {
         this.autor = autor;
-        save();
+        guardar();
     }
 
-    // El código no debería cambiar una vez asignado, pero si fuera necesario:
-    // Este setter tiene un manejo especial para la persistencia.
     public void setCodigo(String codigo) {
         String oldCodigo = this.codigo;
         this.codigo = codigo;
-        saveInternal(oldCodigo); // Maneja el cambio de ID en el archivo
+        guardarInterno(oldCodigo);
     }
 
-    public void setUnLibres(int unLibres) {
-        this.unLibres = unLibres;
-        save();
+    public void setUnidadesLibres(int unidadesLibres) {
+        this.unidadesLibres = unidadesLibres;
+        guardar();
     }
 
-    public void setUnPrestadas(int unPrestadas) {
-        this.unPrestadas = unPrestadas;
-        save();
+    public void setUnidadesPrestadas(int unidadesPrestadas) {
+        this.unidadesPrestadas = unidadesPrestadas;
+        guardar();
     }
 
     public void setIdBiblioteca(int idBiblioteca) {
         this.idBiblioteca = idBiblioteca;
-        save();
+        guardar();
     }
 
     public void setSedeBiblioteca(String sedeBiblioteca) {
         this.sedeBiblioteca = sedeBiblioteca;
-        save();
+        guardar();
     }
 
-    // --- Persistence methods ---
+    // --- Metodos de Persistencia ---
 
-    // Resuelve la ruta del archivo Libros.txt
-    protected static Path resolveLibrosPath() {
-        try {
-            java.net.URL res = Libro.class.getClassLoader().getResource("Libros.txt");
-            if (res != null && "file".equalsIgnoreCase(res.getProtocol())) {
-                try {
-                    return Paths.get(res.toURI());
-                } catch (Exception ex) {
-                    // fallback to user.dir
-                }
-            }
-        } catch (Exception ex) {
-            // ignore and fallback
-        }
-        return Paths.get(System.getProperty("user.dir"), "Libros.txt");
+    protected static Path resolverRutaLibros() {
+        return PathManager.resolverRutaArchivo("Libros.txt");
     }
 
-    // Construye la línea de texto para guardar el libro
-    private String buildLine() {
+    @Override
+    public String construirLinea() {
         return String.format("%s\\%s\\%s\\%d\\%d\\%d\\%s",
-                codigo, nombre, autor, unLibres, unPrestadas, idBiblioteca, sedeBiblioteca);
+                codigo, nombre, autor, unidadesLibres, unidadesPrestadas, idBiblioteca, sedeBiblioteca);
     }
 
-    // Guarda o actualiza el registro del libro.
-    public synchronized void save() {
-        saveInternal(null);
+    @Override
+    public synchronized void guardar() {
+        guardarInterno(null);
     }
 
-    // Método interno para guardar/actualizar, maneja cambios de código o
-    // eliminaciones.
-    // oldCodigo se usa cuando el código del libro ha cambiado o para encontrar la
-    // línea original.
-    protected synchronized void saveInternal(String oldCodigo) {
+    /**
+     * Metodo interno para guardar/actualizar, maneja cambios de codigo o
+     * eliminaciones.
+     * oldCodigo se usa cuando el codigo del libro ha cambiado o para encontrar la
+     * linea original.
+     */
+    protected synchronized void guardarInterno(String oldCodigo) {
         try {
-            Path path = resolveLibrosPath();
+            Path path = resolverRutaLibros();
             List<String> lines = new ArrayList<>();
             if (Files.exists(path)) {
                 lines = new ArrayList<>(Files.readAllLines(path, java.nio.charset.StandardCharsets.UTF_8));
@@ -188,15 +236,14 @@ public class Libro {
             for (int i = 0; i < lines.size(); i++) {
                 String line = lines.get(i);
                 String[] parts = line.split("\\\\");
-                if (parts.length >= 7) { // Asegura que haya suficientes partes para un libro
+                if (parts.length >= 7) {
                     String libroCodigo = parts[0].trim();
                     if (libroCodigo.equals(searchCodigo)) {
-                        if (this.codigo == null || this.codigo.trim().isEmpty()) { // Si el código es null, significa
-                                                                                   // eliminación
+                        if (this.codigo == null || this.codigo.trim().isEmpty()) {
                             lines.remove(i);
                             i--;
                         } else {
-                            lines.set(i, buildLine()); // Actualizar la línea
+                            lines.set(i, construirLinea());
                         }
                         found = true;
                         break;
@@ -206,18 +253,10 @@ public class Libro {
 
             if (!found) {
                 if (this.codigo != null && !this.codigo.trim().isEmpty()) {
-                    lines.add(buildLine()); // Agregar nuevo libro
+                    lines.add(construirLinea());
                 }
             }
 
-            Path parent = path.getParent();
-            if (parent != null && !Files.exists(parent)) {
-                try {
-                    Files.createDirectories(parent);
-                } catch (IOException ex) {
-                    System.err.println("Error creating directory for Libros.txt: " + ex.getMessage());
-                }
-            }
             Files.write(path, lines, java.nio.charset.StandardCharsets.UTF_8, StandardOpenOption.CREATE,
                     StandardOpenOption.TRUNCATE_EXISTING);
 
@@ -226,17 +265,19 @@ public class Libro {
         }
     }
 
-    // Elimina el libro del archivo de persistencia.
-    public synchronized void delete() {
-        String originalCodigo = this.codigo; // Guardar el código original para la búsqueda
-        this.codigo = null; // Marcar para eliminación en saveInternal
-        saveInternal(originalCodigo); // Buscar el libro con el código original y eliminar
+    @Override
+    public synchronized void eliminar() {
+        String originalCodigo = this.codigo;
+        this.codigo = null;
+        guardarInterno(originalCodigo);
     }
 
-    // Carga todos los libros del archivo Libros.txt
-    public static List<Libro> loadAllBooks() {
+    /**
+     * Carga todos los libros del archivo Libros.txt.
+     */
+    public static List<Libro> cargarTodosLosLibros() {
         List<Libro> libros = new ArrayList<>();
-        Path path = resolveLibrosPath();
+        Path path = resolverRutaLibros();
         if (!Files.exists(path)) {
             return libros;
         }
@@ -250,15 +291,16 @@ public class Libro {
                         String codigo = parts[0].trim();
                         String nombre = parts[1].trim();
                         String autor = parts[2].trim();
-                        int unLibres = Integer.parseInt(parts[3].trim());
-                        int unPrestadas = Integer.parseInt(parts[4].trim());
+                        int uniLibres = Integer.parseInt(parts[3].trim());
+                        int uniPrestadas = Integer.parseInt(parts[4].trim());
                         int idBiblioteca = Integer.parseInt(parts[5].trim());
                         String sedeBiblioteca = parts[6].trim();
 
                         libros.add(
-                                new Libro(nombre, autor, codigo, unLibres, unPrestadas, idBiblioteca, sedeBiblioteca));
+                                new Libro(nombre, autor, codigo, uniLibres, uniPrestadas, idBiblioteca,
+                                        sedeBiblioteca));
                     } catch (NumberFormatException e) {
-                        System.err.println("Error parsing book line: " + linea + " - " + e.getMessage());
+                        System.err.println("Error de parseo en linea de libro: " + linea + " - " + e.getMessage());
                     }
                 }
             }
@@ -268,9 +310,11 @@ public class Libro {
         return libros;
     }
 
-    // Encuentra un libro por su código.
-    public static Libro findBookByCode(String code) {
-        List<Libro> allBooks = loadAllBooks();
+    /**
+     * Encuentra un libro por su codigo.
+     */
+    public static Libro encontrarLibroPorCodigo(String code) {
+        List<Libro> allBooks = cargarTodosLosLibros();
         for (Libro libro : allBooks) {
             if (libro.getCodigo().equalsIgnoreCase(code.trim())) {
                 return libro;
@@ -285,8 +329,8 @@ public class Libro {
                 "  Nombre='" + nombre + '\'' +
                 ", Autor='" + autor + '\'' +
                 ", Codigo='" + codigo + '\'' +
-                ", Unidades Libres=" + unLibres +
-                ", Unidades Prestadas=" + unPrestadas +
+                ", Unidades Libres=" + unidadesLibres +
+                ", Unidades Prestadas=" + unidadesPrestadas +
                 ", ID Biblioteca=" + idBiblioteca +
                 ", Sede Biblioteca='" + sedeBiblioteca + '\'' +
                 '}';

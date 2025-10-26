@@ -23,11 +23,12 @@ import java.util.stream.Collectors;
 import java.nio.file.StandardOpenOption;
 
 /**
- * Clase para representar un préstamo de libro.
+ * Clase para representar un prestamo de libro.
+ * Implementa IPersistible para el manejo de guardado y eliminacion.
  */
-public class Prestamo {
+public class Prestamo implements IPersistible {
     private String codigoLibro;
-    private long noDocMiembro;
+    private long numeroDocumentoMiembro;
     private Date fechaPrestamo;
     private Date fechaDevolucionEstimada;
     private Date fechaDevolucionReal; // Null si no se ha devuelto
@@ -37,22 +38,22 @@ public class Prestamo {
     public Prestamo() {
     }
 
-    public Prestamo(String codigoLibro, long noDocMiembro, Date fechaPrestamo, Date fechaDevolucionEstimada,
+    public Prestamo(String codigoLibro, long numeroDocumentoMiembro, Date fechaPrestamo, Date fechaDevolucionEstimada,
             int idBiblioteca) {
         this.codigoLibro = codigoLibro;
-        this.noDocMiembro = noDocMiembro;
+        this.numeroDocumentoMiembro = numeroDocumentoMiembro;
         this.fechaPrestamo = fechaPrestamo;
         this.fechaDevolucionEstimada = fechaDevolucionEstimada;
-        this.fechaDevolucionReal = null; // No devuelto inicialmente
+        this.fechaDevolucionReal = null;
         this.idBiblioteca = idBiblioteca;
-        this.estado = "PRESTADO"; // Estado inicial
+        this.estado = "PRESTADO";
     }
 
     // Constructor para cargar desde archivo
-    public Prestamo(String codigoLibro, long noDocMiembro, Date fechaPrestamo, Date fechaDevolucionEstimada,
+    public Prestamo(String codigoLibro, long numeroDocumentoMiembro, Date fechaPrestamo, Date fechaDevolucionEstimada,
             Date fechaDevolucionReal, int idBiblioteca, String estado) {
         this.codigoLibro = codigoLibro;
-        this.noDocMiembro = noDocMiembro;
+        this.numeroDocumentoMiembro = numeroDocumentoMiembro;
         this.fechaPrestamo = fechaPrestamo;
         this.fechaDevolucionEstimada = fechaDevolucionEstimada;
         this.fechaDevolucionReal = fechaDevolucionReal;
@@ -65,8 +66,8 @@ public class Prestamo {
         return codigoLibro;
     }
 
-    public long getNoDocMiembro() {
-        return noDocMiembro;
+    public long getNumeroDocumentoMiembro() {
+        return numeroDocumentoMiembro;
     }
 
     public Date getFechaPrestamo() {
@@ -89,52 +90,39 @@ public class Prestamo {
         return estado;
     }
 
-    // Setters (invocan save() si modifican un atributo persistente)
+    // Setters (invocan guardar() si modifican un atributo persistente)
     public void setFechaDevolucionReal(Date fechaDevolucionReal) {
         this.fechaDevolucionReal = fechaDevolucionReal;
-        save();
+        guardar();
     }
 
     public void setEstado(String estado) {
         this.estado = estado;
-        save();
+        guardar();
     }
 
-    // --- Persistence methods ---
+    // --- Metodos de Persistencia ---
 
-    // Resuelve la ruta del archivo LibroPrestado.txt
-    protected static Path resolveLibroPrestadoPath() {
-        try {
-            java.net.URL res = Prestamo.class.getClassLoader().getResource("LibroPrestado.txt");
-            if (res != null && "file".equalsIgnoreCase(res.getProtocol())) {
-                try {
-                    return Paths.get(res.toURI());
-                } catch (Exception ex) {
-                    // fallback to user.dir
-                }
-            }
-        } catch (Exception ex) {
-            // ignore and fallback
-        }
-        return Paths.get(System.getProperty("user.dir"), "LibroPrestado.txt");
+    protected static Path resolverRutaLibroPrestado() {
+        return PathManager.resolverRutaArchivo("LibroPrestado.txt");
     }
 
-    // Construye la línea de texto para guardar el préstamo
-    private String buildLine() {
+    @Override
+    public String construirLinea() {
         return String.format("%s\\%d\\%s\\%s\\%s\\%d\\%s",
                 codigoLibro,
-                noDocMiembro,
+                numeroDocumentoMiembro,
                 Fecha.formatDate(fechaPrestamo),
                 Fecha.formatDate(fechaDevolucionEstimada),
-                Fecha.formatDate(fechaDevolucionReal), // Usa Fecha.formatDate para null también
+                Fecha.formatDate(fechaDevolucionReal),
                 idBiblioteca,
                 estado);
     }
 
-    // Guarda o actualiza el registro del préstamo.
-    public synchronized void save() {
+    @Override
+    public synchronized void guardar() {
         try {
-            Path path = resolveLibroPrestadoPath();
+            Path path = resolverRutaLibroPrestado();
             List<String> lines = new ArrayList<>();
             if (Files.exists(path)) {
                 lines = new ArrayList<>(Files.readAllLines(path, java.nio.charset.StandardCharsets.UTF_8));
@@ -148,11 +136,9 @@ public class Prestamo {
             lines = normalized;
 
             boolean found = false;
-            // Usar un identificador único para el préstamo (libro, miembro, fecha de
-            // préstamo)
-            // Se asume que no puede haber dos préstamos del mismo libro al mismo miembro en
-            // la misma fecha de préstamo.
-            String uniqueLoanIdentifier = this.codigoLibro + "_" + this.noDocMiembro + "_"
+            // Usar un identificador unico para el prestamo (libro, miembro, fecha de
+            // prestamo)
+            String uniqueLoanIdentifier = this.codigoLibro + "_" + this.numeroDocumentoMiembro + "_"
                     + Fecha.formatDate(this.fechaPrestamo);
 
             for (int i = 0; i < lines.size(); i++) {
@@ -161,35 +147,28 @@ public class Prestamo {
                 if (parts.length >= 7) {
                     try {
                         String lineCodigoLibro = parts[0].trim();
-                        long lineNoDocMiembro = Long.parseLong(parts[1].trim());
+                        long lineNumeroDocumentoMiembro = Long.parseLong(parts[1].trim());
                         Date lineFechaPrestamo = Fecha.parseDate(parts[2].trim());
 
-                        String lineIdentifier = lineCodigoLibro + "_" + lineNoDocMiembro + "_"
+                        String lineIdentifier = lineCodigoLibro + "_" + lineNumeroDocumentoMiembro + "_"
                                 + Fecha.formatDate(lineFechaPrestamo);
 
                         if (lineIdentifier.equals(uniqueLoanIdentifier)) {
-                            lines.set(i, buildLine()); // Actualizar la línea
+                            lines.set(i, construirLinea());
                             found = true;
                             break;
                         }
                     } catch (NumberFormatException | ParseException e) {
-                        System.err.println("Error parsing loan line during save: " + line + " - " + e.getMessage());
+                        System.err.println("Error de parseo en linea de prestamo durante el guardado: " + line + " - "
+                                + e.getMessage());
                     }
                 }
             }
 
             if (!found) {
-                lines.add(buildLine()); // Agregar nuevo préstamo
+                lines.add(construirLinea());
             }
 
-            Path parent = path.getParent();
-            if (parent != null && !Files.exists(parent)) {
-                try {
-                    Files.createDirectories(parent);
-                } catch (IOException ex) {
-                    System.err.println("Error creating directory for LibroPrestado.txt: " + ex.getMessage());
-                }
-            }
             Files.write(path, lines, java.nio.charset.StandardCharsets.UTF_8, StandardOpenOption.CREATE,
                     StandardOpenOption.TRUNCATE_EXISTING);
 
@@ -198,10 +177,10 @@ public class Prestamo {
         }
     }
 
-    // Elimina un registro de préstamo.
-    public synchronized void delete() {
+    @Override
+    public synchronized void eliminar() {
         try {
-            Path path = resolveLibroPrestadoPath();
+            Path path = resolverRutaLibroPrestado();
             List<String> lines = new ArrayList<>();
             if (Files.exists(path)) {
                 lines = new ArrayList<>(Files.readAllLines(path, java.nio.charset.StandardCharsets.UTF_8));
@@ -214,7 +193,7 @@ public class Prestamo {
             }
             lines = normalized;
 
-            String uniqueLoanIdentifier = this.codigoLibro + "_" + this.noDocMiembro + "_"
+            String uniqueLoanIdentifier = this.codigoLibro + "_" + this.numeroDocumentoMiembro + "_"
                     + Fecha.formatDate(this.fechaPrestamo);
 
             List<String> updatedLines = new ArrayList<>();
@@ -223,31 +202,24 @@ public class Prestamo {
                 if (parts.length >= 7) {
                     try {
                         String lineCodigoLibro = parts[0].trim();
-                        long lineNoDocMiembro = Long.parseLong(parts[1].trim());
+                        long lineNumeroDocumentoMiembro = Long.parseLong(parts[1].trim());
                         Date lineFechaPrestamo = Fecha.parseDate(parts[2].trim());
-                        String lineIdentifier = lineCodigoLibro + "_" + lineNoDocMiembro + "_"
+                        String lineIdentifier = lineCodigoLibro + "_" + lineNumeroDocumentoMiembro + "_"
                                 + Fecha.formatDate(lineFechaPrestamo);
 
                         if (!lineIdentifier.equals(uniqueLoanIdentifier)) {
                             updatedLines.add(line);
                         }
                     } catch (NumberFormatException | ParseException e) {
-                        System.err.println("Error parsing loan line during delete: " + line + " - " + e.getMessage());
-                        updatedLines.add(line); // Mantener la línea si el parsing falla para evitar pérdida de datos
+                        System.err.println("Error de parseo en linea de prestamo durante la eliminacion: " + line
+                                + " - " + e.getMessage());
+                        updatedLines.add(line);
                     }
                 } else {
-                    updatedLines.add(line); // Mantener líneas mal formadas para inspección manual
+                    updatedLines.add(line);
                 }
             }
 
-            Path parent = path.getParent();
-            if (parent != null && !Files.exists(parent)) {
-                try {
-                    Files.createDirectories(parent);
-                } catch (IOException ex) {
-                    System.err.println("Error creating directory for LibroPrestado.txt: " + ex.getMessage());
-                }
-            }
             Files.write(path, updatedLines, java.nio.charset.StandardCharsets.UTF_8, StandardOpenOption.CREATE,
                     StandardOpenOption.TRUNCATE_EXISTING);
 
@@ -256,10 +228,12 @@ public class Prestamo {
         }
     }
 
-    // Carga todos los préstamos del archivo LibroPrestado.txt
-    public static List<Prestamo> loadAllPrestamos() {
+    /**
+     * Carga todos los prestamos del archivo LibroPrestado.txt.
+     */
+    public static List<Prestamo> cargarTodosLosPrestamos() {
         List<Prestamo> prestamos = new ArrayList<>();
-        Path path = resolveLibroPrestadoPath();
+        Path path = resolverRutaLibroPrestado();
         if (!Files.exists(path)) {
             return prestamos;
         }
@@ -271,17 +245,18 @@ public class Prestamo {
                 if (parts.length >= 7) {
                     try {
                         String codigoLibro = parts[0].trim();
-                        long noDocMiembro = Long.parseLong(parts[1].trim());
+                        long numeroDocumentoMiembro = Long.parseLong(parts[1].trim());
                         Date fechaPrestamo = Fecha.parseDate(parts[2].trim());
                         Date fechaDevolucionEstimada = Fecha.parseDate(parts[3].trim());
-                        Date fechaDevolucionReal = Fecha.parseDate(parts[4].trim()); // Usa Fecha.parseDate
+                        Date fechaDevolucionReal = Fecha.parseDate(parts[4].trim());
                         int idBiblioteca = Integer.parseInt(parts[5].trim());
                         String estado = parts[6].trim();
 
-                        prestamos.add(new Prestamo(codigoLibro, noDocMiembro, fechaPrestamo, fechaDevolucionEstimada,
+                        prestamos.add(new Prestamo(codigoLibro, numeroDocumentoMiembro, fechaPrestamo,
+                                fechaDevolucionEstimada,
                                 fechaDevolucionReal, idBiblioteca, estado));
                     } catch (NumberFormatException | ParseException e) {
-                        System.err.println("Error parsing loan line: " + linea + " - " + e.getMessage());
+                        System.err.println("Error de parseo en linea de prestamo: " + linea + " - " + e.getMessage());
                     }
                 }
             }
@@ -291,17 +266,22 @@ public class Prestamo {
         return prestamos;
     }
 
-    // Encuentra todos los préstamos de un miembro específico.
-    public static List<Prestamo> findPrestamosByMember(long noDocMiembro) {
-        return loadAllPrestamos().stream()
-                .filter(p -> p.getNoDocMiembro() == noDocMiembro)
+    /**
+     * Encuentra todos los prestamos de un miembro especifico.
+     */
+    public static List<Prestamo> encontrarPrestamosPorMiembro(long numeroDocumentoMiembro) {
+        return cargarTodosLosPrestamos().stream()
+                .filter(p -> p.getNumeroDocumentoMiembro() == numeroDocumentoMiembro)
                 .collect(Collectors.toList());
     }
 
-    // Encuentra un préstamo activo de un libro por un miembro.
-    public static Prestamo findActivePrestamo(long noDocMiembro, String codigoLibro) {
-        return loadAllPrestamos().stream()
-                .filter(p -> p.getNoDocMiembro() == noDocMiembro && p.getCodigoLibro().equals(codigoLibro)
+    /**
+     * Encuentra un prestamo activo de un libro por un miembro.
+     */
+    public static Prestamo encontrarPrestamoActivo(long numeroDocumentoMiembro, String codigoLibro) {
+        return cargarTodosLosPrestamos().stream()
+                .filter(p -> p.getNumeroDocumentoMiembro() == numeroDocumentoMiembro
+                        && p.getCodigoLibro().equals(codigoLibro)
                         && "PRESTADO".equals(p.getEstado()))
                 .findFirst()
                 .orElse(null);
@@ -310,11 +290,11 @@ public class Prestamo {
     @Override
     public String toString() {
         return "Prestamo {" +
-                "  Libro Código='" + codigoLibro + '\'' +
-                ", Miembro Doc=" + noDocMiembro +
+                "  Libro Codigo='" + codigoLibro + '\'' +
+                ", Miembro Doc=" + numeroDocumentoMiembro +
                 ", Fecha Prestamo=" + Fecha.formatDate(fechaPrestamo) +
-                ", Fecha Devolución Estimada=" + Fecha.formatDate(fechaDevolucionEstimada) +
-                ", Fecha Devolución Real=" + Fecha.formatDate(fechaDevolucionReal) +
+                ", Fecha Devolucion Estimada=" + Fecha.formatDate(fechaDevolucionEstimada) +
+                ", Fecha Devolucion Real=" + Fecha.formatDate(fechaDevolucionReal) +
                 ", ID Biblioteca=" + idBiblioteca +
                 ", Estado='" + estado + '\'' +
                 '}';

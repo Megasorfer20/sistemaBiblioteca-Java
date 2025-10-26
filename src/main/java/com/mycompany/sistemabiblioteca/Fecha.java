@@ -12,27 +12,21 @@ import java.util.Date;
 /**
  * Clase de utilidad para el manejo de fechas, adaptada para usar
  * java.util.Date.
- * Proporciona métodos para formatear, parsear y realizar operaciones básicas
+ * Proporciona metodos para formatear, parsear y realizar operaciones basicas
  * con fechas.
  *
- * @author edrui 
+ * @author edrui
  */
 public class Fecha {
-    // Definimos el SimpleDateFormat aquí para su uso consistente en todo el
+    // Definimos el SimpleDateFormat aqui para su uso consistente en todo el
     // sistema.
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
-    // Los atributos dd, mm, aa del usuario original se eliminan ya que esta clase
-    // ahora actúa como un utilitario para java.util.Date.
-
-    // El constructor por defecto o con parámetros para dd,mm,aa no son necesarios
-    // si esta clase es solo un utilitario con métodos estáticos.
-
     /**
-     * Obtiene la fecha actual (hoy) sin información de hora, minutos, segundos o
+     * Obtiene la fecha actual (hoy) sin informacion de hora, minutos, segundos o
      * milisegundos.
-     * 
-     * @return Una instancia de Date representando el inicio del día actual.
+     *
+     * @return Una instancia de Date representando el inicio del dia actual.
      */
     public static Date getToday() {
         Calendar cal = Calendar.getInstance();
@@ -44,10 +38,10 @@ public class Fecha {
     }
 
     /**
-     * Añade o resta un número de días a una fecha dada.
-     * 
+     * Anade o resta un numero de dias a una fecha dada.
+     *
      * @param date La fecha base.
-     * @param days El número de días a añadir (positivo) o restar (negativo).
+     * @param days El numero de dias a anadir (positivo) o restar (negativo).
      * @return La nueva fecha resultante.
      */
     public static Date addDays(Date date, int days) {
@@ -58,17 +52,17 @@ public class Fecha {
     }
 
     /**
-     * Calcula la diferencia en días entre dos fechas.
-     * 
-     * @param date1 La primera fecha (normalmente la más reciente).
-     * @param date2 La segunda fecha (normalmente la más antigua).
-     * @return El número de días entre date1 y date2. Positivo si date1 es posterior
+     * Calcula la diferencia en dias entre dos fechas.
+     *
+     * @param date1 La primera fecha (normalmente la mas reciente).
+     * @param date2 La segunda fecha (normalmente la mas antigua).
+     * @return El numero de dias entre date1 y date2. Positivo si date1 es posterior
      *         a date2.
      *         Retorna 0 si las fechas son iguales o date1 es anterior a date2 (si
-     *         se quiere solo días de retraso).
+     *         se quiere solo dias de retraso).
      */
     public static long getDaysBetween(Date date1, Date date2) {
-        // Asegurarse de comparar solo el día, ignorando la hora
+        // Asegurarse de comparar solo el dia, ignorando la hora
         Calendar cal1 = Calendar.getInstance();
         cal1.setTime(date1);
         cal1.set(Calendar.HOUR_OF_DAY, 0);
@@ -92,13 +86,13 @@ public class Fecha {
      * Formatea una instancia de {@code Date} a una cadena de texto en el formato
      * "yyyy-MM-dd".
      * Si la fecha es {@code null}, retorna "null" (para persistencia).
-     * 
+     *
      * @param date La fecha a formatear.
      * @return La fecha formateada como {@code String} o "null".
      */
     public static String formatDate(Date date) {
         if (date == null) {
-            return "null"; // Consistent with how we save null dates in Prestamo
+            return "null";
         }
         return DATE_FORMAT.format(date);
     }
@@ -106,11 +100,11 @@ public class Fecha {
     /**
      * Parsea una cadena de texto en formato "yyyy-MM-dd" a una instancia de
      * {@code Date}.
-     * Si la cadena es "null" o vacía, retorna {@code null}.
-     * 
+     * Si la cadena es "null" o vacia, retorna {@code null}.
+     *
      * @param dateString La cadena de texto de la fecha.
      * @return La instancia de {@code Date} o {@code null} si la cadena es "null" o
-     *         vacía.
+     *         vacia.
      * @throws ParseException Si la cadena no puede ser parseada al formato
      *                        esperado.
      */
