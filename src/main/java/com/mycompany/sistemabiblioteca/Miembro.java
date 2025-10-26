@@ -321,7 +321,8 @@ public class Miembro implements IPersistible {
                             String carrera = "";
                             if (parts.length >= 10) {
                                 try {
-                                    deuda = Double.parseDouble(parts[7].trim());
+                                    // CAMBIO AQUI: Usar replace(',', '.') para asegurar el parseo correcto
+                                    deuda = Double.parseDouble(parts[7].trim().replace(',', '.'));
                                     sedeUniversidad = parts[8].trim();
                                     carrera = parts[9].trim();
                                 } catch (NumberFormatException e) {
