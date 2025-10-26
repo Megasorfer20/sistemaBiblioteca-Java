@@ -10,8 +10,6 @@ package com.mycompany.sistemabiblioteca;
  */
 
 import java.util.List;
-import java.util.Scanner;
-import java.util.Date;
 import java.util.stream.Collectors;
 
 public class Admin extends Miembro {

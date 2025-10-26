@@ -1,4 +1,0 @@
-1039239493\1\0\Sys\Admin\admin_BMwz\65536:7NjPBK105UWWNJaCzrhTYw==:Dv3aSHgOvD8IDGQPCj8LlBwf0eriU0xnGCBH6KLoHBM=
-520419830\1\1\91ELl\tsNroOd\user4331\65536:lcL7LbKMn0M4bqJr4k3cUA==:UThc1ibYDDDtb/WEqoUGKhACzpbQh/klMam+rdMr3Iw=\0,00\Bogota\Derecho
-328320934\1\2\JtBc2\Iu3wVCz\user8483\65536:5FXH5U2DKBb2t0c9yYFxag==:mE5iMvbSqj/Km++cwy+onPv4RfEKQhWM5EGtHxmCsuc=\0,00\Medellin\Diseño Grafico
-381754052\2\3\7JUFf\mdQcAlb\user8787\65536:zN776dBsFlAwp+zr7PsOPA==:nLwjdVGldmvXV7iCfI/vsOD7jLrfNS1wbhZx+AF4PcA=\0,00\Medellin\Medicina

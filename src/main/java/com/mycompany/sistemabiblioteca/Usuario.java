@@ -9,18 +9,15 @@ package com.mycompany.sistemabiblioteca;
  * @author edrui
  */
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
-
+import java.util.Locale; // Importar Locale para formato numerico consistente
+/**
+ * Clase que representa a un Usuario en el sistema de biblioteca.
+ * Hereda de Miembro y agrega atributos y metodos especificos para usuarios
+ * como estudiantes, profesores y administrativos.
+ *
+ * @author edrui
+ */
 public class Usuario extends Miembro {
 
     private double deuda;
@@ -116,7 +113,7 @@ public class Usuario extends Miembro {
     public String solicitarPrestamo(String codigoLibro, Biblioteca biblioteca) {
         if (this.deuda > 0) {
             return "Error: No puedes pedir prestado un libro nuevo. Tienes una deuda pendiente de "
-                    + String.format("%.2f", this.deuda) + " pesos.";
+                    + String.format(Locale.US, "%.2f", this.deuda) + " pesos."; // Usar Locale.US para la deuda
         }
         if (biblioteca == null) {
             return "Error: No se ha seleccionado una biblioteca para realizar el prestamo.";
@@ -169,7 +166,8 @@ public class Usuario extends Miembro {
     @Override
     public String construirLinea() {
         return super.construirLinea() + "\\" +
-                String.format("%.2f", this.deuda) + "\\" +
+                String.format(Locale.US, "%.2f", this.deuda) + "\\" + // <<<--- CAMBIO AQUI: Usar Locale.US para la coma
+                                                                      // decimal
                 (this.sedeUniversidad == null ? "" : this.sedeUniversidad) + "\\" +
                 (this.carrera == null ? "" : this.carrera);
     }
@@ -198,9 +196,11 @@ public class Usuario extends Miembro {
                 + "\n  Nombre: " + nombre
                 + "\n  Apellido: " + apellido
                 + "\n  Usuario: " + usuario
-                + "\n  Deuda: " + String.format("%.2f", deuda) + " pesos"
-                + "\n  Sede Universidad: " + sedeUniversidad
-                + "\n  Carrera: " + carrera
-                + "\n}";
+                + "\n  Deuda: " + String.format(Locale.US, "%.2f", deuda) + " pesos" + // Opcional: usar Locale.US aqui
+                                                                                       // tambien para consistencia
+                                                                                       // visual
+                "\n  Sede Universidad: " + sedeUniversidad +
+                "\n  Carrera: " + carrera +
+                "\n}";
     }
 }
