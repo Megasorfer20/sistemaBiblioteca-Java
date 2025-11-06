@@ -2,49 +2,43 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package com.mycompany.sistemabiblioteca;
+package com.mycompany.sistemabiblioteca; // Carpeta donde está organizado nuestro código.
 
-/**
- *
- * @author edrui
- */
+import java.util.List; // Para usar listas.
+import java.util.Locale; // Para formatear números (como la deuda) de forma consistente.
 
-import java.util.List;
-import java.util.Locale; // Importar Locale para formato numerico consistente
-/**
- * Clase que representa a un Usuario en el sistema de biblioteca.
- * Hereda de Miembro y agrega atributos y metodos especificos para usuarios
- * como estudiantes, profesores y administrativos.
- *
- * @author edrui
- */
-public class Usuario extends Miembro {
+// Esta clase representa a un Usuario normal en el sistema de biblioteca.
+// Hereda de 'Miembro' y añade información específica como deuda, sede de la universidad y carrera.
+public class Usuario extends Miembro { // 'Usuario' es un tipo especial de 'Miembro'.
 
-    private double deuda;
-    private String sedeUniversidad;
-    private String carrera;
+    private double deuda; // Cantidad de dinero que el usuario debe a la biblioteca.
+    private String sedeUniversidad; // Sede de la universidad del usuario.
+    private String carrera; // Carrera o programa de estudios del usuario.
 
-    public Usuario() {
-        super();
-        this.deuda = 0.0;
-        this.sedeUniversidad = "";
+    public Usuario() { // Constructor vacío.
+        super(); // Llama al constructor de la clase padre 'Miembro'.
+        this.deuda = 0.0; // Deuda inicial es 0.
+        this.sedeUniversidad = ""; // Sede y carrera vacías al inicio.
         this.carrera = "";
     }
 
+    // Constructor para crear un usuario con todos sus datos.
     public Usuario(byte tipoDocumento, long numeroDocumento, byte rol, String nombre, String apellido, String usuario,
             String contrasena, double deuda, String sedeUniversidad, String carrera) {
-        super(tipoDocumento, numeroDocumento, rol, nombre, apellido, usuario, contrasena);
+        super(tipoDocumento, numeroDocumento, rol, nombre, apellido, usuario, contrasena); // Llama al constructor de
+                                                                                           // 'Miembro'.
 
-        if (rol == 0) {
+        if (rol == 0) { // Si se intenta crear un Usuario con rol de Administrador.
             System.err.println(
                     "Advertencia: Se intento crear un Usuario con rol de Administrador. Estableciendo rol a Estudiante (1).");
-            this.rol = 1;
+            this.rol = 1; // Cambia el rol a 1 (Estudiante) por seguridad.
         }
         this.deuda = deuda;
         this.sedeUniversidad = sedeUniversidad;
         this.carrera = carrera;
     }
 
+    // Getters para los atributos específicos del Usuario.
     public double getDeuda() {
         return deuda;
     }
@@ -57,7 +51,7 @@ public class Usuario extends Miembro {
         return carrera;
     }
 
-    // Setters (que invocan guardar() para persistir cambios)
+    // Setters que guardan el usuario automáticamente después de un cambio.
     public void setDeuda(double deuda) {
         this.deuda = deuda;
         guardar();
@@ -73,109 +67,90 @@ public class Usuario extends Miembro {
         guardar();
     }
 
-    /**
-     * Permite al usuario ver la lista de libros que tiene prestados actualmente.
-     * 
-     * @return Una lista de objetos Prestamo que el usuario tiene activos.
-     */
+    // Permite al usuario ver la lista de todos los libros que tiene o ha tenido
+    // prestados.
     public List<Prestamo> verMisLibrosPrestados() {
         System.out.println("\n--- MIS LIBROS PRESTADOS (" + this.getNombre() + " " + this.getApellido() + ") ---");
+        // Obtiene todos los préstamos asociados a este usuario.
         List<Prestamo> misPrestamos = Prestamo.encontrarPrestamosPorMiembro(this.getNumeroDocumento());
 
-        if (misPrestamos.isEmpty()) {
+        if (misPrestamos.isEmpty()) { // Si el usuario no tiene préstamos.
             System.out.println("No tienes libros prestados o devueltos.");
             return misPrestamos;
         } else {
-            for (Prestamo prestamo : misPrestamos) {
-                Libro libro = Libro.encontrarLibroPorCodigo(prestamo.getCodigoLibro());
-                String infoLibro = (libro != null) ? libro.getNombre() + " (Codigo: " + libro.getCodigo() + ")"
+            for (Prestamo prestamo : misPrestamos) { // Para cada préstamo.
+                Libro libro = Libro.encontrarLibroPorCodigo(prestamo.getCodigoLibro()); // Busca la información del
+                                                                                        // libro.
+                String infoLibro = (libro != null) ? libro.getNombre() + " (Codigo: " + libro.getCodigo() + ")" // Formatea
+                                                                                                                // la
+                                                                                                                // información
+                                                                                                                // del
+                                                                                                                // libro.
                         : "Libro Desconocido";
                 System.out.println("  - " + infoLibro + " | Fecha Prestamo: "
                         + Fecha.formatDate(prestamo.getFechaPrestamo()) + " | Fecha Devolucion Estimada: "
                         + Fecha.formatDate(prestamo.getFechaDevolucionEstimada()) + " | Estado: " + prestamo.getEstado()
-                        + " | Biblioteca ID: " + prestamo.getIdBiblioteca());
+                        + " | Biblioteca ID: " + prestamo.getIdBiblioteca()); // Imprime los detalles del préstamo.
             }
         }
         System.out.println("-----------------------------------------------------------------------------------\n");
         return misPrestamos;
     }
 
-    /**
-     * Permite al usuario solicitar el prestamo de un libro.
-     * La logica de validacion (limites de libros, disponibilidad, DEUDA) esta en la
-     * clase Biblioteca.
-     *
-     * @param codigoLibro El codigo del libro que se desea prestar.
-     * @param biblioteca  La instancia de la biblioteca desde la que se presta el
-     *                    libro.
-     * @return Un mensaje de exito o error del prestamo.
-     */
+    // Permite al usuario solicitar un libro prestado.
+    // Verifica si tiene deuda y si la biblioteca es válida.
     public String solicitarPrestamo(String codigoLibro, Biblioteca biblioteca) {
-        if (this.deuda > 0) {
+        if (this.deuda > 0) { // Si el usuario tiene deuda.
             return "Error: No puedes pedir prestado un libro nuevo. Tienes una deuda pendiente de "
-                    + String.format(Locale.US, "%.2f", this.deuda) + " pesos."; // Usar Locale.US para la deuda
+                    + String.format(Locale.US, "%.2f", this.deuda) + " pesos."; // No puede pedir más libros.
         }
-        if (biblioteca == null) {
+        if (biblioteca == null) { // Si no se ha seleccionado una biblioteca.
             return "Error: No se ha seleccionado una biblioteca para realizar el prestamo.";
         }
         System.out.println("Intentando prestar libro '" + codigoLibro + "' para " + this.getUsuario()
                 + " desde biblioteca " + biblioteca.getNombreBiblioteca());
-        return biblioteca.prestarLibro(this, codigoLibro);
+        return biblioteca.prestarLibro(this, codigoLibro); // Delega la lógica del préstamo a la clase 'Biblioteca'.
     }
 
-    /**
-     * Permite al usuario devolver un libro que tiene prestado.
-     * La logica de actualizacion de estados y multas esta en la clase Biblioteca.
-     *
-     * @param codigoLibro El codigo del libro que se desea devolver.
-     * @param biblioteca  La instancia de la biblioteca a la que se devuelve el
-     *                    libro.
-     * @return Un mensaje de exito o error de la devolucion.
-     */
+    // Permite al usuario devolver un libro prestado.
     public String realizarDevolucion(String codigoLibro, Biblioteca biblioteca) {
-        if (biblioteca == null) {
+        if (biblioteca == null) { // Si no se ha seleccionado una biblioteca.
             return "Error: No se ha seleccionado una biblioteca para realizar la devolucion.";
         }
         System.out.println("Intentando devolver libro '" + codigoLibro + "' para " + this.getUsuario()
                 + " en biblioteca " + biblioteca.getNombreBiblioteca());
-        return biblioteca.devolverLibro(this, codigoLibro);
+        return biblioteca.devolverLibro(this, codigoLibro); // Delega la lógica de la devolución a la clase
+                                                            // 'Biblioteca'.
     }
 
-    /**
-     * Sobrecarga del metodo cambiarInfoPersonal para incluir los atributos
-     * especificos de Usuario.
-     * Llama al metodo del padre para los campos comunes y actualiza los propios.
-     *
-     * @param nuevoTipoDocumento   El nuevo tipo de documento del usuario.
-     * @param nuevoNombre          El nuevo nombre del usuario.
-     * @param nuevoApellido        El nuevo apellido del usuario.
-     * @param nuevaSedeUniversidad La nueva sede de la universidad del usuario.
-     * @param nuevaCarrera         La nueva carrera del usuario.
-     */
+    // Permite al usuario cambiar su información personal (básica y específica de
+    // Usuario).
     public void cambiarInfoPersonal(byte nuevoTipoDocumento, String nuevoNombre, String nuevoApellido,
             String nuevaSedeUniversidad, String nuevaCarrera) {
-        super.cambiarInfoPersonal(nuevoTipoDocumento, nuevoNombre, nuevoApellido); // Llama al metodo del padre
-                                                                                   // (Miembro)
-        this.setSedeUniversidad(nuevaSedeUniversidad); // El setter ya llama a guardar()
-        this.setCarrera(nuevaCarrera); // El setter ya llama a guardar()
-        // No es necesario llamar a guardar() de nuevo aqui ya que cada setter lo hace
-        // al final
+        super.cambiarInfoPersonal(nuevoTipoDocumento, nuevoNombre, nuevoApellido); // Llama al método de la clase padre
+                                                                                   // (Miembro).
+        this.setSedeUniversidad(nuevaSedeUniversidad); // Actualiza la sede de la universidad.
+        this.setCarrera(nuevaCarrera); // Actualiza la carrera.
+        // Los setters ya llaman a 'guardar()', no es necesario hacerlo de nuevo aquí.
     }
 
-    // Override de construirLinea para incluir los nuevos atributos de Usuario
+    // Convierte el objeto Usuario a una línea de texto para guardarlo en el
+    // archivo.
+    // Añade los campos específicos de Usuario a la línea de Miembro.
     @Override
     public String construirLinea() {
-        return super.construirLinea() + "\\" +
-                String.format(Locale.US, "%.2f", this.deuda) + "\\" + // <<<--- CAMBIO AQUI: Usar Locale.US para la coma
-                                                                      // decimal
-                (this.sedeUniversidad == null ? "" : this.sedeUniversidad) + "\\" +
-                (this.carrera == null ? "" : this.carrera);
+        return super.construirLinea() + "\\" + // Obtiene la línea de la clase padre.
+                String.format(Locale.US, "%.2f", this.deuda) + "\\" + // Añade la deuda (con punto decimal).
+                (this.sedeUniversidad == null ? "" : this.sedeUniversidad) + "\\" + // Añade la sede.
+                (this.carrera == null ? "" : this.carrera); // Añade la carrera.
     }
 
+    // Devuelve una cadena de texto que representa el objeto Usuario de forma
+    // legible.
     @Override
     public String toString() {
-        String rolText;
-        switch (this.rol) {
+        String rolText; // Variable para el nombre legible del rol.
+        switch (this.rol) { // Convierte el número de rol a texto.
             case 1:
                 rolText = "Estudiante";
                 break;
@@ -196,9 +171,7 @@ public class Usuario extends Miembro {
                 + "\n  Nombre: " + nombre
                 + "\n  Apellido: " + apellido
                 + "\n  Usuario: " + usuario
-                + "\n  Deuda: " + String.format(Locale.US, "%.2f", deuda) + " pesos" + // Opcional: usar Locale.US aqui
-                                                                                       // tambien para consistencia
-                                                                                       // visual
+                + "\n  Deuda: " + String.format(Locale.US, "%.2f", deuda) + " pesos" + // Muestra la deuda.
                 "\n  Sede Universidad: " + sedeUniversidad +
                 "\n  Carrera: " + carrera +
                 "\n}";

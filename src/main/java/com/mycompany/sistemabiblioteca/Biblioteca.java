@@ -2,37 +2,40 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package com.mycompany.sistemabiblioteca;
+package com.mycompany.sistemabiblioteca; // Carpeta donde está organizado nuestro código.
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.io.BufferedReader; // Herramienta para leer archivos de texto.
+import java.io.IOException; // Para manejar errores al trabajar con archivos.
+import java.nio.file.Files; // Para interactuar con archivos y directorios.
+import java.nio.file.Path; // Para representar la ruta de un archivo.
+import java.nio.file.StandardOpenOption; // Opciones para abrir/guardar archivos.
+import java.util.ArrayList; // Para crear listas dinámicas.
+import java.util.Date; // Para manejar fechas.
+import java.util.List; // Para usar listas.
+import java.util.stream.Collectors; // Para operar con listas de forma avanzada.
 
-public class Biblioteca implements IPersistible {
+public class Biblioteca implements IPersistible { // La clase 'Biblioteca' representa una sede de la biblioteca y puede
+                                                  // guardarse/cargarse.
 
-    private int id;
-    private String sede;
-    private String nombreBiblioteca;
+    private int id; // Número único de la biblioteca.
+    private String sede; // Ubicación de la biblioteca (ej. "Medellin").
+    private String nombreBiblioteca; // Nombre completo de la biblioteca.
 
-    public static final double MULTA_POR_DIA = 4.750;
-    public static final int DIAS_MAX_PRESTAMO = 30;
+    public static final double MULTA_POR_DIA = 4.750; // Costo de multa por día de retraso (es fijo para todas las
+                                                      // bibliotecas).
+    public static final int DIAS_MAX_PRESTAMO = 30; // Días máximos para un préstamo sin multa (es fijo).
 
-    public Biblioteca(int id, String sede, String nombreBiblioteca) {
+    public Biblioteca(int id, String sede, String nombreBiblioteca) { // Constructor para crear una biblioteca con
+                                                                      // datos.
         this.id = id;
         this.sede = sede;
         this.nombreBiblioteca = nombreBiblioteca;
     }
 
-    public Biblioteca() {
+    public Biblioteca() { // Constructor vacío.
     }
 
-    // Getters
+    // Métodos para obtener los valores de los atributos (Getters)
     public int getId() {
         return id;
     }
@@ -45,7 +48,7 @@ public class Biblioteca implements IPersistible {
         return nombreBiblioteca;
     }
 
-    // Setters
+    // Métodos para cambiar los valores de los atributos (Setters)
     public void setId(int id) {
         this.id = id;
     }
@@ -59,121 +62,123 @@ public class Biblioteca implements IPersistible {
     }
 
     // --- Metodos de Persistencia para Biblioteca ---
+    // Devuelve la ruta donde se guarda el archivo de las bibliotecas.
     protected static Path resolverRutaBibliotecas() {
-        return PathManager.resolverRutaArchivo("Bibliotecas.txt");
+        return PathManager.resolverRutaArchivo("Bibliotecas.txt"); // Pide a 'PathManager' la ruta de "Bibliotecas.txt".
     }
 
-    /**
-     * Carga todas las bibliotecas del archivo Bibliotecas.txt.
-     */
+    // Carga todas las bibliotecas del archivo "Bibliotecas.txt" y las devuelve en
+    // una lista.
     public static List<Biblioteca> cargarTodasLasBibliotecas() {
-        List<Biblioteca> bibliotecas = new ArrayList<>();
-        Path path = resolverRutaBibliotecas();
-        if (!Files.exists(path)) {
-            System.err.println("Advertencia: Archivo Bibliotecas.txt no encontrado en " + path.toAbsolutePath());
-            return bibliotecas;
+        List<Biblioteca> bibliotecas = new ArrayList<>(); // Lista donde se guardarán las bibliotecas.
+        Path path = resolverRutaBibliotecas(); // Obtiene la ruta del archivo.
+        if (!Files.exists(path)) { // Si el archivo no existe.
+            System.err.println("Advertencia: Archivo Bibliotecas.txt no encontrado en " + path.toAbsolutePath()); // Muestra
+                                                                                                                  // una
+                                                                                                                  // advertencia.
+            return bibliotecas; // Devuelve una lista vacía.
         }
 
-        try (BufferedReader reader = Files.newBufferedReader(path, java.nio.charset.StandardCharsets.UTF_8)) {
-            String linea;
-            while ((linea = reader.readLine()) != null) {
-                String[] parts = linea.split("\\\\");
-                if (parts.length >= 3) { // id\sede\nombreBiblioteca
+        try (BufferedReader reader = Files.newBufferedReader(path, java.nio.charset.StandardCharsets.UTF_8)) { // Abre
+                                                                                                               // el
+                                                                                                               // archivo
+                                                                                                               // para
+                                                                                                               // leer.
+            String linea; // Variable para cada línea.
+            while ((linea = reader.readLine()) != null) { // Lee el archivo línea por línea.
+                String[] parts = linea.split("\\\\"); // Divide la línea por '\' para obtener los datos.
+                if (parts.length >= 3) { // Si la línea tiene al menos 3 partes (ID, sede, nombre).
                     try {
-                        int id = Integer.parseInt(parts[0].trim());
-                        String sede = parts[1].trim();
-                        String nombre = parts[2].trim();
-                        bibliotecas.add(new Biblioteca(id, sede, nombre));
+                        int id = Integer.parseInt(parts[0].trim()); // Convierte la primera parte a ID.
+                        String sede = parts[1].trim(); // La segunda parte es la sede.
+                        String nombre = parts[2].trim(); // La tercera parte es el nombre.
+                        bibliotecas.add(new Biblioteca(id, sede, nombre)); // Crea una Biblioteca y la añade a la lista.
                     } catch (NumberFormatException e) {
-                        System.err.println("Error de parseo en linea de Biblioteca: " + linea + " - " + e.getMessage());
+                        System.err.println("Error de parseo en linea de Biblioteca: " + linea + " - " + e.getMessage()); // Error
+                                                                                                                         // si
+                                                                                                                         // el
+                                                                                                                         // ID
+                                                                                                                         // no
+                                                                                                                         // es
+                                                                                                                         // número.
                     }
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException e) { // Si hay un problema al leer el archivo.
+            e.printStackTrace(); // Imprime el error.
         }
-        return bibliotecas;
+        return bibliotecas; // Devuelve la lista de bibliotecas.
     }
 
-    /**
-     * Guarda una lista completa de bibliotecas en el archivo Bibliotecas.txt,
-     * sobrescribiendo el contenido existente.
-     */
+    // Guarda una lista completa de bibliotecas en el archivo "Bibliotecas.txt",
+    // reemplazando el contenido.
     public static synchronized void guardarTodasLasBibliotecas(List<Biblioteca> bibliotecas) {
-        Path path = resolverRutaBibliotecas();
+        Path path = resolverRutaBibliotecas(); // Obtiene la ruta del archivo.
         List<String> lineas = bibliotecas.stream()
-                .map(Biblioteca::construirLinea)
-                .collect(Collectors.toList());
+                .map(Biblioteca::construirLinea) // Convierte cada objeto Biblioteca a una línea de texto.
+                .collect(Collectors.toList()); // Recolecta todas las líneas en una lista.
         try {
-            Files.write(path, lineas, java.nio.charset.StandardCharsets.UTF_8, StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING);
-        } catch (IOException e) {
-            e.printStackTrace();
+            Files.write(path, lineas, java.nio.charset.StandardCharsets.UTF_8, StandardOpenOption.CREATE, // Crea el
+                                                                                                          // archivo si
+                                                                                                          // no existe.
+                    StandardOpenOption.TRUNCATE_EXISTING); // Borra el contenido existente antes de escribir.
+        } catch (IOException e) { // Si hay un problema al escribir.
+            e.printStackTrace(); // Imprime el error.
         }
     }
 
-    /**
-     * Encuentra una biblioteca por su ID.
-     */
+    // Busca una biblioteca por su ID en la lista de todas las bibliotecas.
     public static Biblioteca encontrarBibliotecaPorId(int id) {
         return cargarTodasLasBibliotecas().stream()
-                .filter(b -> b.getId() == id)
-                .findFirst()
-                .orElse(null);
+                .filter(b -> b.getId() == id) // Filtra para encontrar la que coincide con el ID.
+                .findFirst() // Toma la primera que encuentre.
+                .orElse(null); // Si no encuentra, devuelve 'null'.
     }
 
-    /**
-     * Encuentra una biblioteca por su sede.
-     */
+    // Busca una biblioteca por el nombre de su sede (sin importar
+    // mayúsculas/minúsculas).
     public static Biblioteca encontrarBibliotecaPorSede(String sede) {
         return cargarTodasLasBibliotecas().stream()
-                .filter(b -> b.getSede().equalsIgnoreCase(sede))
+                .filter(b -> b.getSede().equalsIgnoreCase(sede)) // Filtra por la sede, ignorando mayúsculas/minúsculas.
                 .findFirst()
                 .orElse(null);
     }
 
-    // Implementacion de IPersistible (en este caso, guardar/eliminar es gestionado
-    // por la lista estatica)
+    // Este método no hace nada aquí, porque las bibliotecas se guardan/eliminan
+    // como una lista completa.
     @Override
     public void guardar() {
-        // En este diseño, la persistencia de Bibliotecas se maneja a nivel de lista
-        // estatica.
-        // Un solo objeto Biblioteca no se "auto-guarda", sino que se guarda la lista
-        // completa.
-        // Si se editara un campo, se cargaria la lista, se editara el objeto y se
-        // guardaria la lista completa.
-        // Dejamos este metodo para cumplir la interfaz, pero no hace nada aqui.
         System.out.println(
                 "Advertencia: El metodo guardar() de Biblioteca no guarda instancias individuales. Use guardarTodasLasBibliotecas().");
     }
 
+    // Este método tampoco hace nada, por la misma razón que 'guardar()'.
     @Override
     public void eliminar() {
-        // Similar a guardar(), la eliminacion se maneja a nivel de lista estatica.
         System.out.println(
                 "Advertencia: El metodo eliminar() de Biblioteca no elimina instancias individuales. Use la logica del Admin para eliminar de la lista.");
     }
 
+    // Convierte los datos de la biblioteca a una línea de texto para guardarla en
+    // el archivo.
     @Override
     public String construirLinea() {
-        return String.format("%d\\%s\\%s", id, sede, nombreBiblioteca);
+        return String.format("%d\\%s\\%s", id, sede, nombreBiblioteca); // Formato: ID\Sede\Nombre.
     }
 
     // --- Metodos de la funcionalidad de la biblioteca ---
 
-    /**
-     * Permite seleccionar una sede, aunque la logica de seleccion es externa a esta
-     * clase.
-     */
+    // Este método solo muestra las sedes disponibles, la selección se hace en otra
+    // parte del programa.
     public void seleccionarSede() {
         System.out.println("Sedes de Bibliotecas disponibles:");
-        List<Biblioteca> bibliotecas = cargarTodasLasBibliotecas();
-        if (bibliotecas.isEmpty()) {
+        List<Biblioteca> bibliotecas = cargarTodasLasBibliotecas(); // Carga todas las bibliotecas para mostrarlas.
+        if (bibliotecas.isEmpty()) { // Si no hay bibliotecas.
             System.out.println("No hay bibliotecas registradas.");
             return;
         }
 
-        for (Biblioteca b : bibliotecas) {
+        for (Biblioteca b : bibliotecas) { // Recorre y muestra cada biblioteca.
             System.out.println("ID: " + b.getId() + ", Sede: " + b.getSede() + ", Nombre: " + b.getNombreBiblioteca());
         }
 
@@ -182,51 +187,48 @@ public class Biblioteca implements IPersistible {
                 "El objeto Biblioteca actual (this) representa la sede con ID: " + this.id + " y Sede: " + this.sede);
     }
 
-    /**
-     * Realiza el prestamo de un libro a un miembro.
-     * Incorpora las reglas de limites por tipo de usuario y la verificacion de
-     * deuda.
-     */
+    // Permite prestar un libro a un miembro, aplicando reglas de límite y deuda.
     public String prestarLibro(Miembro miembro, String codigoLibro) {
-        if (miembro == null) {
+        if (miembro == null) { // Verifica que el miembro exista.
             return "Error: Miembro no valido.";
         }
-        if (miembro.getRol() == 0) {
+        if (miembro.getRol() == 0) { // Los administradores no pueden pedir libros prestados.
             return "Error: Los administradores no pueden pedir libros prestados para si mismos.";
         }
 
-        // Verificar si el usuario tiene deuda pendiente
-        if (miembro instanceof Usuario) {
-            Usuario user = (Usuario) miembro;
-            if (user.getDeuda() > 0) {
+        // Si el miembro es un Usuario, verifica si tiene deuda.
+        if (miembro instanceof Usuario) { // 'instanceof' comprueba si 'miembro' es un 'Usuario'.
+            Usuario user = (Usuario) miembro; // Lo convierte a 'Usuario' para acceder a su deuda.
+            if (user.getDeuda() > 0) { // Si tiene deuda.
                 return "Error: No puedes pedir prestado un libro. Tienes una deuda pendiente de "
-                        + String.format("%.2f", user.getDeuda()) + " pesos.";
+                        + String.format("%.2f", user.getDeuda()) + " pesos."; // Da un error.
             }
         }
 
-        Libro libro = Libro.encontrarLibroPorCodigo(codigoLibro);
-        if (libro == null) {
-            return "Error: Libro con codigo " + codigoLibro + " no encontrado.";
+        Libro libro = Libro.encontrarLibroPorCodigo(codigoLibro); // Busca el libro.
+        if (libro == null) { // Si el libro no se encuentra.
+            return "Error: Libro con codigo " + codigoLibro + " no encontrado."; // Da un error.
         }
 
-        // Verificar que el libro pertenece a esta biblioteca
+        // Verifica que el libro pertenezca a esta biblioteca.
         if (libro.getIdBiblioteca() != this.id) {
             return "Error: El libro " + codigoLibro + " no se encuentra en esta biblioteca (" + this.nombreBiblioteca
                     + ").";
         }
 
-        if (libro.getUnidadesLibres() <= 0) {
-            return "Error: El libro '" + libro.getNombre() + "' no tiene unidades disponibles.";
+        if (libro.getUnidadesLibres() <= 0) { // Verifica si hay unidades disponibles del libro.
+            return "Error: El libro '" + libro.getNombre() + "' no tiene unidades disponibles."; // Da un error.
         }
 
+        // Obtiene la lista de libros que este miembro ya tiene prestados.
         List<Prestamo> prestamosActivosDelMiembro = Prestamo.encontrarPrestamosPorMiembro(miembro.getNumeroDocumento())
                 .stream()
-                .filter(p -> "PRESTADO".equals(p.getEstado()))
+                .filter(p -> "PRESTADO".equals(p.getEstado())) // Solo los que están activos ("PRESTADO").
                 .collect(Collectors.toList());
 
-        int limitePrestamos;
-        String tipoMiembro;
-        switch (miembro.getRol()) {
+        int limitePrestamos; // Límite de préstamos según el rol.
+        String tipoMiembro; // Descripción del tipo de miembro.
+        switch (miembro.getRol()) { // Asigna límites según el rol del miembro.
             case 1: // Estudiante
                 limitePrestamos = 5;
                 tipoMiembro = "Estudiante";
@@ -240,174 +242,187 @@ public class Biblioteca implements IPersistible {
                 tipoMiembro = "Administrativo de la Universidad";
                 break;
             default:
-                return "Error: Rol de miembro desconocido.";
+                return "Error: Rol de miembro desconocido."; // Error si el rol no es válido.
         }
 
+        // Si el miembro ya alcanzó su límite de préstamos.
         if (prestamosActivosDelMiembro.size() >= limitePrestamos) {
             return "Error: El " + tipoMiembro + " " + miembro.getNombre() + " ya ha alcanzado su limite de "
-                    + limitePrestamos + " libros prestados.";
+                    + limitePrestamos + " libros prestados."; // Da un error.
         }
 
-        // Verificar si el miembro ya tiene este mismo libro prestado
+        // Verifica si el miembro ya tiene este mismo libro prestado.
         boolean yaTieneLibro = prestamosActivosDelMiembro.stream()
                 .anyMatch(p -> p.getCodigoLibro().equals(codigoLibro));
-        if (yaTieneLibro) {
-            return "Error: El miembro ya tiene este libro prestado.";
+        if (yaTieneLibro) { // Si ya lo tiene.
+            return "Error: El miembro ya tiene este libro prestado."; // Da un error.
         }
 
-        // Realizar el prestamo
-        libro.setUnidadesLibres(libro.getUnidadesLibres() - 1);
-        libro.setUnidadesPrestadas(libro.getUnidadesPrestadas() + 1);
-        libro.guardar();
+        // Si todas las condiciones son buenas, se realiza el préstamo.
+        libro.setUnidadesLibres(libro.getUnidadesLibres() - 1); // Disminuye una unidad libre.
+        libro.setUnidadesPrestadas(libro.getUnidadesPrestadas() + 1); // Aumenta una unidad prestada.
+        libro.guardar(); // Guarda los cambios del libro.
 
-        Date fechaPrestamo = Fecha.getToday();
-        Date fechaDevolucionEstimada = Fecha.addDays(fechaPrestamo, DIAS_MAX_PRESTAMO);
+        Date fechaPrestamo = Fecha.getToday(); // Obtiene la fecha actual.
+        Date fechaDevolucionEstimada = Fecha.addDays(fechaPrestamo, DIAS_MAX_PRESTAMO); // Calcula la fecha límite de
+                                                                                        // devolución.
 
         Prestamo nuevoPrestamo = new Prestamo(codigoLibro, miembro.getNumeroDocumento(), fechaPrestamo,
                 fechaDevolucionEstimada,
-                this.id);
-        nuevoPrestamo.guardar();
+                this.id); // Crea un nuevo objeto Prestamo.
+        nuevoPrestamo.guardar(); // Guarda el registro del préstamo.
 
         return "Exito: Libro '" + libro.getNombre() + "' prestado a " + miembro.getNombre() + " "
                 + miembro.getApellido() + ". Debe ser devuelto antes de " + Fecha.formatDate(fechaDevolucionEstimada)
-                + ".";
+                + "."; // Mensaje de éxito.
     }
 
-    /**
-     * Realiza la devolucion de un libro por parte de un miembro.
-     * Calcula multas si aplica.
-     */
+    // Permite devolver un libro y calcula multas si hay retraso.
     public String devolverLibro(Miembro miembro, String codigoLibro) {
-        if (miembro == null) {
+        if (miembro == null) { // Verifica que el miembro exista.
             return "Error: Miembro no valido.";
         }
 
-        Libro libro = Libro.encontrarLibroPorCodigo(codigoLibro);
-        if (libro == null) {
-            return "Error: Libro con codigo " + codigoLibro + " no encontrado.";
+        Libro libro = Libro.encontrarLibroPorCodigo(codigoLibro); // Busca el libro.
+        if (libro == null) { // Si no lo encuentra.
+            return "Error: Libro con codigo " + codigoLibro + " no encontrado."; // Da un error.
         }
 
-        // Verificar que el libro pertenece a esta biblioteca
+        // Verifica que el libro pertenezca a esta biblioteca.
         if (libro.getIdBiblioteca() != this.id) {
             return "Error: El libro " + codigoLibro + " no se encuentra en esta biblioteca (" + this.nombreBiblioteca
                     + ").";
         }
 
-        Prestamo prestamoActivo = Prestamo.encontrarPrestamoActivo(miembro.getNumeroDocumento(), codigoLibro);
+        Prestamo prestamoActivo = Prestamo.encontrarPrestamoActivo(miembro.getNumeroDocumento(), codigoLibro); // Busca
+                                                                                                               // el
+                                                                                                               // préstamo
+                                                                                                               // activo
+                                                                                                               // del
+                                                                                                               // libro
+                                                                                                               // por
+                                                                                                               // este
+                                                                                                               // miembro.
 
-        if (prestamoActivo == null) {
+        if (prestamoActivo == null) { // Si no se encuentra un préstamo activo.
             return "Error: El miembro " + miembro.getNombre() + " no tiene prestado el libro '" + libro.getNombre()
-                    + "'.";
+                    + "'."; // Da un error.
         }
 
-        // Marcar el prestamo como devuelto
-        prestamoActivo.setFechaDevolucionReal(Fecha.getToday());
-        prestamoActivo.setEstado("DEVUELTO");
-        prestamoActivo.guardar();
+        // Actualiza el préstamo como devuelto.
+        prestamoActivo.setFechaDevolucionReal(Fecha.getToday()); // Establece la fecha real de devolución (hoy).
+        prestamoActivo.setEstado("DEVUELTO"); // Cambia el estado a "DEVUELTO".
+        prestamoActivo.guardar(); // Guarda los cambios del préstamo.
 
-        libro.setUnidadesLibres(libro.getUnidadesLibres() + 1);
-        libro.setUnidadesPrestadas(libro.getUnidadesPrestadas() - 1);
-        libro.guardar();
+        libro.setUnidadesLibres(libro.getUnidadesLibres() + 1); // Aumenta una unidad libre del libro.
+        libro.setUnidadesPrestadas(libro.getUnidadesPrestadas() - 1); // Disminuye una unidad prestada.
+        libro.guardar(); // Guarda los cambios del libro.
 
-        String multaInfo = "";
-        // Verificar si hay multa y aplicarla
+        String multaInfo = ""; // Mensaje de multa (vacío si no hay multa).
+        // Verifica si hubo retraso en la devolución para aplicar una multa.
         if (prestamoActivo.getFechaDevolucionReal().after(prestamoActivo.getFechaDevolucionEstimada())) {
-            multaInfo = multar(miembro, libro, prestamoActivo);
+            multaInfo = multar(miembro, libro, prestamoActivo); // Calcula y aplica la multa.
         }
 
         return "Exito: Libro '" + libro.getNombre() + "' devuelto por " + miembro.getNombre() + " "
-                + miembro.getApellido() + ". " + multaInfo;
+                + miembro.getApellido() + ". " + multaInfo; // Mensaje de éxito.
     }
 
-    /**
-     * Busca los libros disponibles en una sede especifica.
-     */
+    // Busca libros disponibles en una sede específica.
     public List<Libro> librosDisponibles(String sedeBusqueda) {
         return Libro.cargarTodosLosLibros().stream()
-                .filter(libro -> libro.getSedeBiblioteca().equalsIgnoreCase(sedeBusqueda)
-                        && libro.getUnidadesLibres() > 0)
-                .collect(Collectors.toList());
+                .filter(libro -> libro.getSedeBiblioteca().equalsIgnoreCase(sedeBusqueda) // Filtra por sede (ignorando
+                                                                                          // mayúsculas/minúsculas).
+                        && libro.getUnidadesLibres() > 0) // Solo si hay unidades libres.
+                .collect(Collectors.toList()); // Devuelve la lista de libros.
     }
 
-    /**
-     * Busca los libros disponibles por ID de biblioteca.
-     */
+    // Busca libros disponibles por el ID de una biblioteca.
     public List<Libro> librosDisponibles(int idBibliotecaBusqueda) {
         return Libro.cargarTodosLosLibros().stream()
-                .filter(libro -> libro.getIdBiblioteca() == idBibliotecaBusqueda && libro.getUnidadesLibres() > 0)
+                .filter(libro -> libro.getIdBiblioteca() == idBibliotecaBusqueda && libro.getUnidadesLibres() > 0) // Filtra
+                                                                                                                   // por
+                                                                                                                   // ID
+                                                                                                                   // de
+                                                                                                                   // biblioteca
+                                                                                                                   // y
+                                                                                                                   // unidades
+                                                                                                                   // libres.
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Busca los libros disponibles en una sede y por ID de biblioteca.
-     */
+    // Busca libros disponibles por sede Y por ID de biblioteca.
     public List<Libro> librosDisponibles(String sedeBusqueda, int idBibliotecaBusqueda) {
         return Libro.cargarTodosLosLibros().stream()
-                .filter(libro -> libro.getSedeBiblioteca().equalsIgnoreCase(sedeBusqueda)
-                        && libro.getIdBiblioteca() == idBibliotecaBusqueda
-                        && libro.getUnidadesLibres() > 0)
+                .filter(libro -> libro.getSedeBiblioteca().equalsIgnoreCase(sedeBusqueda) // Filtra por sede.
+                        && libro.getIdBiblioteca() == idBibliotecaBusqueda // Filtra por ID de biblioteca.
+                        && libro.getUnidadesLibres() > 0) // Y solo si hay unidades libres.
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Realiza una busqueda generica de libros por nombre, autor, codigo, sede o ID
-     * de biblioteca.
-     */
+    // Realiza una búsqueda flexible de libros por varios criterios.
     public List<Libro> buscarLibro(String query, String searchType) {
-        List<Libro> allBooks = Libro.cargarTodosLosLibros();
+        List<Libro> allBooks = Libro.cargarTodosLosLibros(); // Carga todos los libros.
         return allBooks.stream()
-                .filter(libro -> {
+                .filter(libro -> { // Para cada libro, aplica un filtro según el tipo de búsqueda.
                     switch (searchType.toLowerCase()) {
                         case "nombre":
-                            return libro.getNombre().toLowerCase().contains(query.toLowerCase());
+                            return libro.getNombre().toLowerCase().contains(query.toLowerCase()); // Busca si el nombre
+                                                                                                  // contiene el texto.
                         case "autor":
-                            return libro.getAutor().toLowerCase().contains(query.toLowerCase());
+                            return libro.getAutor().toLowerCase().contains(query.toLowerCase()); // Busca si el autor
+                                                                                                 // contiene el texto.
                         case "codigo":
-                            return libro.getCodigo().equalsIgnoreCase(query);
+                            return libro.getCodigo().equalsIgnoreCase(query); // Busca por código exacto.
                         case "sede":
-                            return libro.getSedeBiblioteca().equalsIgnoreCase(query);
+                            return libro.getSedeBiblioteca().equalsIgnoreCase(query); // Busca por sede exacta.
                         case "idbiblioteca":
                             try {
-                                return libro.getIdBiblioteca() == Integer.parseInt(query);
+                                return libro.getIdBiblioteca() == Integer.parseInt(query); // Busca por ID de biblioteca
+                                                                                           // (numérico).
                             } catch (NumberFormatException e) {
-                                return false;
+                                return false; // Si el texto no es un número, no coincide.
                             }
                         default:
-                            return false;
+                            return false; // Si el tipo de búsqueda no es válido.
                     }
                 })
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()); // Devuelve la lista de libros encontrados.
     }
 
-    /**
-     * Calcula y aplica multas por retraso en la devolucion de libros.
-     */
+    // Calcula y aplica multas por retraso en la devolución de libros.
     public String multar(Miembro miembro, Libro libro, Prestamo prestamo) {
+        // Verifica si el préstamo existe, si se devolvió y si fue después de la fecha
+        // estimada.
         if (prestamo != null && prestamo.getFechaDevolucionReal() != null &&
                 prestamo.getFechaDevolucionReal().after(prestamo.getFechaDevolucionEstimada())) {
 
             long diasRetraso = Fecha.getDaysBetween(prestamo.getFechaDevolucionReal(),
-                    prestamo.getFechaDevolucionEstimada());
+                    prestamo.getFechaDevolucionEstimada()); // Calcula los días de retraso.
 
-            if (diasRetraso <= 0)
+            if (diasRetraso <= 0) // Asegura que al menos sea 1 día de retraso si la devolución fue tardía.
                 diasRetraso = 1;
 
-            double montoMulta = diasRetraso * MULTA_POR_DIA;
+            double montoMulta = diasRetraso * MULTA_POR_DIA; // Calcula el monto total de la multa.
 
-            if (miembro instanceof Usuario) {
+            if (miembro instanceof Usuario) { // Si el miembro es un Usuario (solo los usuarios acumulan deuda).
                 Usuario user = (Usuario) miembro;
-                user.setDeuda(user.getDeuda() + montoMulta);
+                user.setDeuda(user.getDeuda() + montoMulta); // Añade el monto al total de la deuda del usuario.
                 System.out.println("Deuda actualizada para " + user.getNombre() + ". Nueva deuda total: "
-                        + String.format("%.2f", user.getDeuda()));
+                        + String.format("%.2f", user.getDeuda())); // Muestra la nueva deuda.
             }
 
             return String.format(
                     "Se ha aplicado una multa a %s %s por el libro '%s'. Retraso: %d dias. Monto: %.2f pesos. ",
-                    miembro.getNombre(), miembro.getApellido(), libro.getNombre(), diasRetraso, montoMulta);
+                    miembro.getNombre(), miembro.getApellido(), libro.getNombre(), diasRetraso, montoMulta); // Mensaje
+                                                                                                             // de
+                                                                                                             // multa.
         }
-        return "No hay multa para este prestamo.";
+        return "No hay multa para este prestamo."; // Mensaje si no aplica multa.
     }
 
+    // Devuelve una cadena de texto que representa el objeto Biblioteca de forma
+    // legible.
     @Override
     public String toString() {
         return "Biblioteca {" +

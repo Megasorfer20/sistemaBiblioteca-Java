@@ -5,32 +5,19 @@
 package com.mycompany.sistemabiblioteca;
 
 /**
- *
  * @author edrui
  */
 
-/**
- * Interfaz para definir el comportamiento basico de persistencia
- * que deben tener los objetos del sistema (guardar, eliminar, construir linea).
- *
- * @author edrui
- */
+// Esta interfaz define un "contrato" para objetos que pueden guardarse y
+// eliminarse.
+// Cualquier clase que use esta interfaz debe implementar estos métodos.
 public interface IPersistible {
-    /**
-     * Guarda o actualiza el estado del objeto en su archivo de persistencia.
-     */
+    // Guarda o actualiza el objeto en su archivo.
     void guardar();
 
-    /**
-     * Elimina el objeto de su archivo de persistencia.
-     */
+    // Elimina el objeto de su archivo.
     void eliminar();
 
-    /**
-     * Construye una linea de texto que representa el estado actual del objeto,
-     * para ser almacenada en un archivo.
-     *
-     * @return Una cadena formateada para persistencia.
-     */
+    // Convierte el objeto a una línea de texto para guardarlo en un archivo.
     String construirLinea();
 }

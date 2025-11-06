@@ -2,77 +2,74 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  */
 
-package com.mycompany.sistemabiblioteca;
+package com.mycompany.sistemabiblioteca; // Carpeta donde está organizado nuestro código.
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.InputMismatchException;
-import java.util.List;
-import java.util.Scanner;
-import java.util.stream.Collectors; // Necesario para .stream().collect(Collectors.toList()) en verTodosLibrosDisponibles
+import java.io.IOException; // Para manejar errores al trabajar con archivos.
+import java.nio.charset.StandardCharsets; // Para especificar la codificación de texto (UTF-8).
+import java.nio.file.Files; // Para operar con archivos.
+import java.nio.file.Path; // Para rutas de archivos.
+import java.nio.file.StandardOpenOption; // Opciones para guardar archivos.
+import java.security.SecureRandom; // Para generar números aleatorios seguros.
+import java.util.ArrayList; // Para listas dinámicas.
+import java.util.InputMismatchException; // Para manejar errores si el usuario no escribe un número.
+import java.util.List; // Para usar listas.
+import java.util.Scanner; // Para leer la entrada del usuario.
+import java.util.stream.Collectors; // Para operar con listas de forma avanzada.
 
-/**
- * Clase principal que orquesta el sistema de la biblioteca.
- * Maneja el inicio de sesion y la navegacion por los menus de administrador y
- * usuario, e incluye pruebas automaticas.
- *
- * @author edrui
- */
+// Esta es la clase principal que inicia y controla todo el sistema de la biblioteca.
+// Maneja el login, los menús y ejecuta pruebas automáticas.
 public class SistemaBiblioteca {
 
-    private static Miembro miembroActual = null;
-    private static Biblioteca bibliotecaSeleccionada = null;
-    private static Scanner scanner = new Scanner(System.in);
+    private static Miembro miembroActual = null; // Guarda el usuario que ha iniciado sesión.
+    private static Biblioteca bibliotecaSeleccionada = null; // Guarda la biblioteca con la que se está trabajando.
+    private static Scanner scanner = new Scanner(System.in); // Herramienta para leer lo que escribe el usuario.
 
-    // Para generar usuarios/contrasenas aleatorios
+    // Caracteres permitidos para generar nombres de usuario y contraseñas
+    // aleatorias.
     private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final SecureRandom RANDOM = new SecureRandom(); // Generador de números aleatorios seguro.
 
+    // Genera una cadena de texto aleatoria de una longitud específica.
     private static String stringAleatorio(int length) {
-        StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            sb.append(CHARS.charAt(RANDOM.nextInt(CHARS.length())));
+        StringBuilder sb = new StringBuilder(length); // Constructor de cadenas.
+        for (int i = 0; i < length; i++) { // Repite 'length' veces.
+            sb.append(CHARS.charAt(RANDOM.nextInt(CHARS.length()))); // Añade un caracter aleatorio.
         }
-        return sb.toString();
+        return sb.toString(); // Devuelve la cadena final.
     }
 
+    // Este es el método que se ejecuta cuando el programa inicia.
     public static void main(String[] args) {
-        System.out.println("¡Bienvenido al Sistema de Gestion de Bibliotecas!");
+        System.out.println("¡Bienvenido al Sistema de Gestion de Bibliotecas!"); // Mensaje de bienvenida.
 
         System.out.println("\n--- INICIANDO CONFIGURACION Y PRUEBAS AUTOMATICAS ---");
-        // Limpiar archivos de datos para asegurar un test consistente cada vez
-        limpiarArchivosDeDatos(); // Nueva funcion para borrar datos antes de cada ejecucion
+        limpiarArchivosDeDatos(); // Borra los datos antiguos para empezar de cero en cada ejecución.
 
-        setupInitialData(); // Inicializar datos: admin, usuarios, bibliotecas
-        ejecutarTestsAutomaticos(); // Ejecutar las pruebas
+        setupInitialData(); // Configura datos iniciales: bibliotecas, un admin y usuarios de prueba.
+        ejecutarTestsAutomaticos(); // Ejecuta una serie de pruebas para verificar el sistema.
         System.out.println("--- PRUEBAS AUTOMATICAS COMPLETADAS ---\n");
 
-        // Cargar las bibliotecas disponibles despues de posible adicion en setup
+        // Carga las bibliotecas disponibles.
         List<Biblioteca> bibliotecasDisponibles = Biblioteca.cargarTodasLasBibliotecas();
-        if (bibliotecasDisponibles.isEmpty()) {
+        if (bibliotecasDisponibles.isEmpty()) { // Si no hay bibliotecas configuradas.
             System.err.println(
                     "Error: No se encontraron bibliotecas configuradas. Por favor, asegurese de tener 'Bibliotecas.txt' con datos.");
-            return;
+            return; // El programa termina.
         }
 
-        seleccionarBibliotecaInicial(bibliotecasDisponibles);
+        seleccionarBibliotecaInicial(bibliotecasDisponibles); // Pide al usuario que elija una biblioteca.
 
-        if (bibliotecaSeleccionada == null) {
+        if (bibliotecaSeleccionada == null) { // Si no se pudo seleccionar una biblioteca.
             System.out.println("No se pudo seleccionar una biblioteca. Saliendo del sistema.");
-            scanner.close();
-            return;
+            scanner.close(); // Cierra el lector de teclado.
+            return; // El programa termina.
         }
 
-        // --- Informacion de login manual para pruebas ---
+        // --- Información de login manual para pruebas ---
+        // Busca el admin y el usuario de prueba para mostrar sus credenciales.
         Admin adminParaLogin = (Admin) Miembro.encontrarMiembroPorUsuario(
                 Miembro.cargarTodosLosMiembros().stream().filter(m -> m.getRol() == 0).findFirst().get().getUsuario());
-        Usuario userParaLogin = (Usuario) Miembro.encontrarMiembroPorUsuario("user3975"); // Re-buscarlo por si se
-                                                                                          // actualizo
+        Usuario userParaLogin = (Usuario) Miembro.encontrarMiembroPorUsuario("user3975");
 
         System.out.println("\n--- DATOS PARA LOGIN MANUAL DESPUES DE LOS TESTS ---");
         System.out.println("Admin -> Usuario: " + adminParaLogin.getUsuario()
@@ -81,51 +78,47 @@ public class SistemaBiblioteca {
                 + ", **Contrasena: nuevaContrasenaUser** (cambio durante los tests)");
         System.out.println("----------------------------------------------");
 
-        // Proceso de Login
-        login();
+        login(); // Inicia el proceso de login.
 
-        if (miembroActual != null) {
-            if (miembroActual.getRol() == 0) { // Administrador
-                mostrarMenuAdmin();
-            } else { // Usuario (Estudiante, Profesor, Administrativo)
-                mostrarMenuUsuario();
+        if (miembroActual != null) { // Si el login fue exitoso.
+            if (miembroActual.getRol() == 0) { // Si es Administrador.
+                mostrarMenuAdmin(); // Muestra el menú de Admin.
+            } else { // Si es Usuario.
+                mostrarMenuUsuario(); // Muestra el menú de Usuario.
             }
         }
 
-        System.out.println("Gracias por usar el Sistema de Bibliotecas. ¡Hasta pronto!");
-        scanner.close();
+        System.out.println("Gracias por usar el Sistema de Bibliotecas. ¡Hasta pronto!"); // Mensaje de despedida.
+        scanner.close(); // Cierra el lector de teclado.
     }
 
-    /**
-     * Limpia los archivos de datos para asegurar que cada ejecucion de pruebas sea
-     * consistente.
-     */
+    // Borra todos los archivos de datos para que cada ejecución del programa
+    // empiece limpia.
     private static void limpiarArchivosDeDatos() {
         System.out.println("Limpiando archivos de datos para un inicio limpio...");
+        // Obtiene las rutas de todos los archivos de datos.
         Path miembrosPath = PathManager.resolverRutaArchivo("Miembros.txt");
         Path librosPath = PathManager.resolverRutaArchivo("Libros.txt");
         Path prestamosPath = PathManager.resolverRutaArchivo("LibroPrestado.txt");
         Path bibliotecasPath = PathManager.resolverRutaArchivo("Bibliotecas.txt");
 
         try {
-            Files.deleteIfExists(miembrosPath);
-            Files.deleteIfExists(librosPath);
-            Files.deleteIfExists(prestamosPath);
-            Files.deleteIfExists(bibliotecasPath);
+            Files.deleteIfExists(miembrosPath); // Borra el archivo de miembros si existe.
+            Files.deleteIfExists(librosPath); // Borra el archivo de libros si existe.
+            Files.deleteIfExists(prestamosPath); // Borra el archivo de préstamos si existe.
+            Files.deleteIfExists(bibliotecasPath); // Borra el archivo de bibliotecas si existe.
             System.out.println("Archivos de datos eliminados correctamente.");
-        } catch (IOException e) {
+        } catch (IOException e) { // Si ocurre un error al borrar.
             System.err.println("Error al limpiar archivos de datos: " + e.getMessage());
         }
     }
 
-    /**
-     * Configura los datos iniciales del sistema (bibliotecas, admin, usuarios).
-     * Si los archivos no existen, los crea con datos de ejemplo.
-     */
+    // Configura los datos iniciales del sistema (bibliotecas, admin, usuarios de
+    // ejemplo).
     private static void setupInitialData() {
         System.out.println("\n--- CONFIGURANDO DATOS INICIALES ---");
 
-        // 1. Crear el archivo Bibliotecas.txt si no existe con datos de ejemplo
+        // 1. Crea "Bibliotecas.txt" con datos de ejemplo si no existe.
         Path bibliotecasPath = Biblioteca.resolverRutaBibliotecas();
         if (!Files.exists(bibliotecasPath) || Biblioteca.cargarTodasLasBibliotecas().isEmpty()) {
             System.out.println("Creando 'Bibliotecas.txt' con datos de ejemplo...");
@@ -134,7 +127,7 @@ public class SistemaBiblioteca {
                 defaultBibliotecas.add("1\\Medellin\\Biblioteca Central");
                 defaultBibliotecas.add("2\\Bogota\\Biblioteca Norte");
                 Files.write(bibliotecasPath, defaultBibliotecas, StandardCharsets.UTF_8, StandardOpenOption.CREATE,
-                        StandardOpenOption.TRUNCATE_EXISTING);
+                        StandardOpenOption.TRUNCATE_EXISTING); // Escribe las bibliotecas en el archivo.
                 System.out.println("Bibliotecas de ejemplo creadas.");
             } catch (IOException e) {
                 System.err.println("Error al crear Bibliotecas.txt: " + e.getMessage());
@@ -143,7 +136,7 @@ public class SistemaBiblioteca {
             System.out.println("Bibliotecas existentes cargadas.");
         }
 
-        // 2. Crear 1 admin si no existe
+        // 2. Crea un administrador si no existe ninguno.
         Admin adminExistente = null;
         for (Miembro m : Miembro.cargarTodosLosMiembros()) {
             if (m instanceof Admin) {
@@ -154,19 +147,19 @@ public class SistemaBiblioteca {
 
         if (adminExistente == null) {
             System.out.println("Creando un nuevo administrador...");
-            String adminUser = "admin_" + stringAleatorio(4);
-            String adminPass = stringAleatorio(10);
+            String adminUser = "admin_" + stringAleatorio(4); // Genera usuario aleatorio.
+            String adminPass = stringAleatorio(10); // Genera contraseña aleatoria.
             Admin nuevoAdmin = new Admin((byte) 1, 1000000000L + RANDOM.nextInt(100000000), (byte) 0, "Sys", "Admin",
-                    adminUser, adminPass);
-            nuevoAdmin.guardar();
+                    adminUser, adminPass); // Crea el objeto Admin.
+            nuevoAdmin.guardar(); // Guarda el admin.
             System.out.println("Admin creado (¡Use estas credenciales para iniciar sesion!):");
             System.out.println("  Usuario: " + adminUser);
-            System.out.println("  Contrasena: " + adminPass);
+            System.out.println("  Contrasena: " + adminPass); // Muestra credenciales.
         } else {
             System.out.println("Administrador existente encontrado: " + adminExistente.getUsuario());
         }
 
-        // 3. Crear 3 usuarios aleatorios si hay menos de 3 usuarios con rol != 0
+        // 3. Crea 3 usuarios aleatorios si hay menos de 3 (sin contar al admin).
         long currentUsers = Miembro.cargarTodosLosMiembros().stream().filter(m -> m.getRol() != 0).count();
         int usersToCreate = 3 - (int) currentUsers;
         if (usersToCreate > 0) {
@@ -187,21 +180,20 @@ public class SistemaBiblioteca {
                 String sedeUni = sedes[RANDOM.nextInt(sedes.length)];
                 String carreraUser = carreras[RANDOM.nextInt(carreras.length)];
 
-                // Para el test, aseguramos que user3975 sea el estudiante de prueba si es el
-                // primero
-                if (i == 0 && userEstudianteTestUserName == null) { // Un poco de hack para el test, el primer usuario
-                                                                    // es el estudiante
+                // Asegura que "user3975" sea el estudiante de prueba si es el primero en
+                // crearse.
+                if (i == 0 && userEstudianteTestUserName == null) {
                     user = "user3975";
                     pass = "pHuBTzFH";
-                    rol = 1; // Estudiante
+                    rol = 1; // Estudiante.
                     name = "TuZSg";
                     lastName = "M5qZpR2";
                     sedeUni = "Bogota";
                     carreraUser = "Ingenieria de Sistemas";
                 }
                 Usuario nuevoUsuario = new Usuario(docType, docNum, rol, name, lastName, user, pass, 0.0, sedeUni,
-                        carreraUser);
-                nuevoUsuario.guardar();
+                        carreraUser); // Crea el objeto Usuario.
+                nuevoUsuario.guardar(); // Guarda el usuario.
                 System.out.println("  Usuario creado: " + user + " (Rol: " + roles[rol - 1] + ", Pass: " + pass + ")");
             }
         } else {
@@ -210,42 +202,36 @@ public class SistemaBiblioteca {
         System.out.println("--- CONFIGURACION INICIAL COMPLETA ---\n");
     }
 
-    /**
-     * Permite al usuario seleccionar una biblioteca de las disponibles.
-     * 
-     * @param bibliotecasDisponibles Lista de bibliotecas para elegir.
-     */
+    // Permite al usuario elegir una biblioteca para la sesión actual.
     private static void seleccionarBibliotecaInicial(List<Biblioteca> bibliotecasDisponibles) {
         System.out.println("\n--- SELECCION DE BIBLIOTECA ---");
         System.out.println("Seleccione una biblioteca para iniciar:");
-        for (int i = 0; i < bibliotecasDisponibles.size(); i++) {
+        for (int i = 0; i < bibliotecasDisponibles.size(); i++) { // Muestra las bibliotecas con un número.
             System.out.println((i + 1) + ". " + bibliotecasDisponibles.get(i).getNombreBiblioteca() + " ("
                     + bibliotecasDisponibles.get(i).getSede() + ")");
         }
         int opcionBib;
-        while (true) {
+        while (true) { // Bucle hasta que elija una opción válida.
             System.out.print("Ingrese el numero de la biblioteca: ");
             try {
-                opcionBib = scanner.nextInt();
-                scanner.nextLine();
-                if (opcionBib > 0 && opcionBib <= bibliotecasDisponibles.size()) {
-                    bibliotecaSeleccionada = bibliotecasDisponibles.get(opcionBib - 1);
+                opcionBib = scanner.nextInt(); // Lee la opción.
+                scanner.nextLine(); // Consume el Enter.
+                if (opcionBib > 0 && opcionBib <= bibliotecasDisponibles.size()) { // Si la opción es válida.
+                    bibliotecaSeleccionada = bibliotecasDisponibles.get(opcionBib - 1); // Guarda la biblioteca elegida.
                     System.out
                             .println("Ha seleccionado la biblioteca: " + bibliotecaSeleccionada.getNombreBiblioteca());
-                    break;
+                    break; // Sale del bucle.
                 } else {
                     System.out.println("Opcion no valida. Intente de nuevo.");
                 }
-            } catch (InputMismatchException e) {
+            } catch (InputMismatchException e) { // Si no ingresa un número.
                 System.out.println("Entrada invalida. Por favor, ingrese un numero.");
-                scanner.nextLine();
+                scanner.nextLine(); // Limpia la entrada.
             }
         }
     }
 
-    /**
-     * Maneja el proceso de inicio de sesion.
-     */
+    // Maneja el proceso de inicio de sesión.
     private static void login() {
         System.out.println("\n--- INICIO DE SESION ---");
         System.out.print("Usuario: ");
@@ -253,19 +239,15 @@ public class SistemaBiblioteca {
         System.out.print("Contrasena: ");
         String contrasena = scanner.nextLine();
 
-        Miembro tempMiembro = new Miembro();
-        // El metodo login verifica la contrasena y retorna la linea si es exitoso
-        String lineaMiembro = tempMiembro.login(usuario, contrasena);
+        Miembro tempMiembro = new Miembro(); // Crea un Miembro temporal para llamar al método de login.
+        String lineaMiembro = tempMiembro.login(usuario, contrasena); // Intenta hacer login.
 
-        if (!lineaMiembro.isEmpty()) {
-            // Si el login fue exitoso, cargamos el objeto Miembro completo (que puede ser
-            // Admin o Usuario)
-            // Esto es importante porque el objeto tempMiembro es generico, y necesitamos la
-            // instancia correcta (Admin/Usuario)
-            // con todos sus atributos especificos (ej. deuda para Usuario).
+        if (!lineaMiembro.isEmpty()) { // Si el login fue exitoso.
+            // Carga el objeto Miembro completo (Admin o Usuario) para tener todos sus datos
+            // específicos.
             Miembro foundMiembro = Miembro.encontrarMiembroPorUsuario(usuario);
             if (foundMiembro != null) {
-                miembroActual = foundMiembro;
+                miembroActual = foundMiembro; // Establece el miembro actual.
             } else {
                 System.err.println(
                         "Error interno: Miembro encontrado por login pero no por findMemberByUsername. Fallo la carga del objeto completo.");
@@ -274,16 +256,17 @@ public class SistemaBiblioteca {
             }
             System.out.println("Inicio de sesion exitoso. ¡Bienvenido, " + miembroActual.getNombre() + "!");
         } else {
-            System.out.println("Usuario o contrasena incorrectos.");
+            System.out.println("Usuario o contrasena incorrectos."); // Si el login falló.
             miembroActual = null;
         }
     }
 
     // --- Implementacion de Menus (Admin y Usuario) ---
+    // Muestra el menú principal para los administradores.
     private static void mostrarMenuAdmin() {
-        Admin admin = (Admin) miembroActual;
+        Admin admin = (Admin) miembroActual; // Convierte el miembro actual a Admin.
         int opcion;
-        do {
+        do { // Bucle del menú.
             System.out.println("\n--- MENU ADMINISTRADOR ---");
             System.out.println("1. Administrar Libros");
             System.out.println("2. Administrar Usuarios");
@@ -299,10 +282,10 @@ public class SistemaBiblioteca {
             System.out.print("Seleccione una opcion: ");
 
             try {
-                opcion = scanner.nextInt();
-                scanner.nextLine();
+                opcion = scanner.nextInt(); // Lee la opción.
+                scanner.nextLine(); // Consume el Enter.
 
-                switch (opcion) {
+                switch (opcion) { // Ejecuta la acción según la opción.
                     case 1:
                         menuAdminLibros(admin);
                         break;
@@ -344,14 +327,15 @@ public class SistemaBiblioteca {
                     default:
                         System.out.println("Opcion no valida. Intente de nuevo.");
                 }
-            } catch (InputMismatchException e) {
+            } catch (InputMismatchException e) { // Si no ingresa un número.
                 System.out.println("Entrada invalida. Por favor, ingrese un numero.");
                 scanner.nextLine();
                 opcion = -1;
             }
-        } while (opcion != 0);
+        } while (opcion != 0); // Continúa hasta que elija 0.
     }
 
+    // Muestra el submenú para que el admin gestione libros.
     private static void menuAdminLibros(Admin admin) {
         int opcion;
         do {
@@ -367,7 +351,7 @@ public class SistemaBiblioteca {
                 scanner.nextLine();
 
                 switch (opcion) {
-                    case 1:
+                    case 1: // Agregar libro.
                         System.out.print("Nombre: ");
                         String nombre = scanner.nextLine();
                         System.out.print("Autor: ");
@@ -377,11 +361,10 @@ public class SistemaBiblioteca {
                         System.out.print("Unidades Totales: ");
                         int unidades = scanner.nextInt();
                         scanner.nextLine();
-                        System.out.println(
-                                admin.agregarLibro(nombre, autor, codigo, unidades, bibliotecaSeleccionada.getId(),
-                                        bibliotecaSeleccionada.getSede()));
+                        System.out.println(admin.agregarLibro(nombre, autor, codigo, unidades,
+                                bibliotecaSeleccionada.getId(), bibliotecaSeleccionada.getSede()));
                         break;
-                    case 2:
+                    case 2: // Editar libro.
                         System.out.print("Codigo del libro a editar: ");
                         String codEdit = scanner.nextLine();
                         Libro libroAEditar = Libro.encontrarLibroPorCodigo(codEdit);
@@ -407,12 +390,10 @@ public class SistemaBiblioteca {
                         int newUnidades = (newUnidadesStr.isEmpty()
                                 ? (libroAEditar.getUnidadesLibres() + libroAEditar.getUnidadesPrestadas())
                                 : Integer.parseInt(newUnidadesStr));
-
                         System.out.println(admin.editarLibro(codEdit, newNombre, newAutor, newUnidades,
-                                libroAEditar.getIdBiblioteca(),
-                                libroAEditar.getSedeBiblioteca()));
+                                libroAEditar.getIdBiblioteca(), libroAEditar.getSedeBiblioteca()));
                         break;
-                    case 3:
+                    case 3: // Eliminar unidades o libro completo.
                         System.out.print("Codigo del libro a eliminar: ");
                         String codDel = scanner.nextLine();
                         System.out.print(
@@ -430,7 +411,7 @@ public class SistemaBiblioteca {
                     default:
                         System.out.println("Opcion no valida.");
                 }
-            } catch (InputMismatchException | NumberFormatException e) {
+            } catch (InputMismatchException | NumberFormatException e) { // Si hay error de tipo de dato.
                 System.out.println("Entrada invalida. Asegurese de ingresar el tipo de dato correcto.");
                 scanner.nextLine();
                 opcion = -1;
@@ -438,6 +419,7 @@ public class SistemaBiblioteca {
         } while (opcion != 0);
     }
 
+    // Muestra el submenú para que el admin gestione usuarios.
     private static void menuAdminUsuarios(Admin admin) {
         int opcion;
         do {
@@ -453,7 +435,7 @@ public class SistemaBiblioteca {
                 scanner.nextLine();
 
                 switch (opcion) {
-                    case 1:
+                    case 1: // Agregar usuario.
                         System.out.print("Tipo de Documento (1:CC, 2:TI, etc.): ");
                         byte tipoDoc = scanner.nextByte();
                         System.out.print("Numero de Documento: ");
@@ -476,12 +458,10 @@ public class SistemaBiblioteca {
                         String sedeUni = scanner.nextLine();
                         System.out.print("Carrera (Ej. Ingenieria de Sistemas): ");
                         String carrera = scanner.nextLine();
-
                         System.out.println(admin.crearUsuario(tipoDoc, noDoc, rol, nombre, apellido, usuario,
-                                contrasena, deuda, sedeUni,
-                                carrera));
+                                contrasena, deuda, sedeUni, carrera));
                         break;
-                    case 2:
+                    case 2: // Editar usuario.
                         System.out.print("Usuario a editar: ");
                         String userEdit = scanner.nextLine();
                         Miembro miembroAEditar = Miembro.encontrarMiembroPorUsuario(userEdit);
@@ -491,7 +471,6 @@ public class SistemaBiblioteca {
                         }
                         System.out.println(
                                 "Editando miembro: " + miembroAEditar.getNombre() + " " + miembroAEditar.getApellido());
-
                         System.out.print("Nuevo Tipo Doc (actual: " + miembroAEditar.getTipoDocumento()
                                 + ", dejar vacio para no cambiar): ");
                         String newTipoDocStr = scanner.nextLine();
@@ -523,20 +502,18 @@ public class SistemaBiblioteca {
                             newUsuario = miembroAEditar.getUsuario();
                         System.out.print("Nueva Contrasena (dejar vacio para no cambiar): ");
                         String newContrasena = scanner.nextLine();
-
                         double nuevaDeuda = 0.0;
                         String nuevaSedeUni = "";
                         String nuevaCarrera = "";
-
-                        if (newRol != 0) {
-                            if (miembroAEditar instanceof Usuario) {
+                        if (newRol != 0) { // Si el rol no es Admin, pide datos de Usuario.
+                            if (miembroAEditar instanceof Usuario) { // Si ya era un Usuario.
                                 Usuario currentUsuario = (Usuario) miembroAEditar;
                                 System.out.print(
                                         "Nueva Deuda (actual: " + String.format("%.2f", currentUsuario.getDeuda())
                                                 + ", dejar vacio para no cambiar): ");
                                 String newDeudaStr = scanner.nextLine();
                                 nuevaDeuda = (newDeudaStr.isEmpty() ? currentUsuario.getDeuda()
-                                        : Double.parseDouble(newDeudaStr.replace(',', '.'))); // CAMBIO AQUI
+                                        : Double.parseDouble(newDeudaStr.replace(',', '.')));
                                 System.out.print("Nueva Sede Universidad (actual: "
                                         + currentUsuario.getSedeUniversidad() + ", dejar vacio para no cambiar): ");
                                 String newSedeUniStr = scanner.nextLine();
@@ -546,13 +523,13 @@ public class SistemaBiblioteca {
                                         + ", dejar vacio para no cambiar): ");
                                 String newCarreraStr = scanner.nextLine();
                                 nuevaCarrera = (newCarreraStr.isEmpty() ? currentUsuario.getCarrera() : newCarreraStr);
-                            } else {
+                            } else { // Si era Admin y cambia a Usuario.
                                 System.out.println(
                                         "Este miembro pasara a ser un Usuario. Por favor, ingrese sus datos especificos:");
                                 System.out.print("Nueva Deuda (0.0 por defecto): ");
                                 String newDeudaStr = scanner.nextLine();
                                 nuevaDeuda = (newDeudaStr.isEmpty() ? 0.0
-                                        : Double.parseDouble(newDeudaStr.replace(',', '.'))); // CAMBIO AQUI
+                                        : Double.parseDouble(newDeudaStr.replace(',', '.')));
                                 System.out.print("Nueva Sede Universidad: ");
                                 nuevaSedeUni = scanner.nextLine();
                                 System.out.print("Nueva Carrera: ");
@@ -562,12 +539,10 @@ public class SistemaBiblioteca {
                             System.out.println(
                                     "Este miembro es o seguira siendo un Administrador; los campos de deuda, sede y carrera no aplican.");
                         }
-
                         System.out.println(admin.editarUsuario(userEdit, newTipoDoc, newNoDoc, newRol, newNombre,
-                                newApellido, newUsuario,
-                                newContrasena, nuevaDeuda, nuevaSedeUni, nuevaCarrera));
+                                newApellido, newUsuario, newContrasena, nuevaDeuda, nuevaSedeUni, nuevaCarrera));
                         break;
-                    case 3:
+                    case 3: // Eliminar usuario.
                         System.out.print("Usuario a eliminar: ");
                         String userDel = scanner.nextLine();
                         System.out.println(admin.eliminarUsuario(userDel));
@@ -585,6 +560,7 @@ public class SistemaBiblioteca {
         } while (opcion != 0);
     }
 
+    // Muestra el submenú para que el admin gestione bibliotecas.
     private static void menuAdminBibliotecas(Admin admin) {
         int opcion;
         do {
@@ -598,10 +574,10 @@ public class SistemaBiblioteca {
 
             try {
                 opcion = scanner.nextInt();
-                scanner.nextLine(); // Consumir salto de linea
+                scanner.nextLine();
 
                 switch (opcion) {
-                    case 1:
+                    case 1: // Agregar biblioteca.
                         System.out.print("ID de la nueva biblioteca: ");
                         int newId = scanner.nextInt();
                         scanner.nextLine();
@@ -611,7 +587,7 @@ public class SistemaBiblioteca {
                         String newName = scanner.nextLine();
                         System.out.println(admin.agregarBiblioteca(newId, newSede, newName));
                         break;
-                    case 2:
+                    case 2: // Editar biblioteca.
                         System.out.print("ID de la biblioteca a editar: ");
                         int editId = scanner.nextInt();
                         scanner.nextLine();
@@ -632,13 +608,13 @@ public class SistemaBiblioteca {
                             newNameEdit = bibAEditar.getNombreBiblioteca();
                         System.out.println(admin.editarBiblioteca(editId, newSedeEdit, newNameEdit));
                         break;
-                    case 3:
+                    case 3: // Eliminar biblioteca.
                         System.out.print("ID de la biblioteca a eliminar: ");
                         int delId = scanner.nextInt();
                         scanner.nextLine();
                         System.out.println(admin.eliminarBiblioteca(delId));
                         break;
-                    case 4:
+                    case 4: // Ver todas las bibliotecas.
                         System.out.println("\n--- LISTADO DE BIBLIOTECAS ---");
                         List<Biblioteca> todasBib = Biblioteca.cargarTodasLasBibliotecas();
                         if (todasBib.isEmpty()) {
@@ -661,6 +637,7 @@ public class SistemaBiblioteca {
         } while (opcion != 0);
     }
 
+    // Permite al admin cambiar su información personal.
     private static void cambiarInfoPersonalAdmin(Admin admin) {
         System.out.println("\n--- CAMBIAR INFORMACION PERSONAL DE ADMIN ---");
         System.out.print("Nuevo Tipo Doc (actual: " + admin.getTipoDocumento() + ", dejar vacio para no cambiar): ");
@@ -675,23 +652,25 @@ public class SistemaBiblioteca {
         if (newApellido.isEmpty())
             newApellido = admin.getApellido();
 
-        admin.cambiarInfoPersonal(newTipoDoc, newNombre, newApellido);
+        admin.cambiarInfoPersonal(newTipoDoc, newNombre, newApellido); // Llama al método de Admin.
         System.out.println("Informacion personal actualizada con exito.");
     }
 
+    // Permite al admin cambiar su contraseña.
     private static void cambiarContrasenaAdmin(Admin admin) {
         System.out.println("\n--- CAMBIAR CONTRASENA DE ADMIN ---");
         System.out.print("Ingrese la nueva contrasena: ");
         String newPass = scanner.nextLine();
-        admin.cambiarContrasena(newPass);
+        admin.cambiarContrasena(newPass); // Llama al método de Admin para cambiar la contraseña.
         System.out.println("Contrasena actualizada con exito.");
     }
 
-    // Nuevo metodo para ver todos los libros disponibles, sin importar la sede.
+    // Muestra todos los libros que tienen unidades disponibles en cualquier
+    // biblioteca.
     private static void verTodosLibrosDisponibles() {
         System.out.println("\n--- TODOS LOS LIBROS DISPONIBLES (todas las sedes) ---");
         List<Libro> todosDisponibles = Libro.cargarTodosLosLibros().stream()
-                .filter(l -> l.getUnidadesLibres() > 0)
+                .filter(l -> l.getUnidadesLibres() > 0) // Filtra solo los libros con unidades libres.
                 .collect(Collectors.toList());
         if (todosDisponibles.isEmpty()) {
             System.out.println("No hay ningun libro disponible en ninguna biblioteca.");
@@ -701,51 +680,51 @@ public class SistemaBiblioteca {
         System.out.println("-------------------------------------------------------------------\n");
     }
 
-    // Nuevo metodo para que el usuario pague su deuda
+    // Permite a un usuario pagar parte o toda su deuda.
     private static void pagarDeuda(Usuario usuario) {
         System.out.println("\n--- PAGAR DEUDA ---");
         if (usuario.getDeuda() <= 0) {
             System.out.println("No tienes deuda pendiente.");
             return;
-        }
+        } // Si no tiene deuda.
         System.out.println("Tu deuda actual es: " + String.format("%.2f", usuario.getDeuda()) + " pesos.");
         System.out.print("¿Cuanto deseas pagar? ");
         try {
             double montoPago = scanner.nextDouble();
-            scanner.nextLine(); // Consumir el salto de linea
-
+            scanner.nextLine(); // Lee el monto.
             if (montoPago <= 0) {
                 System.out.println("El monto a pagar debe ser mayor que cero.");
                 return;
             }
-            if (montoPago > usuario.getDeuda()) {
+            if (montoPago > usuario.getDeuda()) { // Si paga de más.
                 System.out.println("Advertencia: Estas pagando mas de lo debido. Tu deuda se ajustara a 0.");
-                usuario.setDeuda(0.0);
+                usuario.setDeuda(0.0); // La deuda queda en 0.
             } else {
-                usuario.setDeuda(usuario.getDeuda() - montoPago);
+                usuario.setDeuda(usuario.getDeuda() - montoPago); // Resta el pago a la deuda.
             }
-            usuario.guardar(); // Persistir el cambio de deuda
+            usuario.guardar(); // Guarda el usuario con la deuda actualizada.
             System.out.println(
                     "Pago realizado. Tu nueva deuda es: " + String.format("%.2f", usuario.getDeuda()) + " pesos.");
-        } catch (InputMismatchException e) {
+        } catch (InputMismatchException e) { // Si no ingresa un número.
             System.out.println("Entrada invalida. Por favor, ingresa un numero valido para el monto.");
-            scanner.nextLine(); // Limpiar el buffer
+            scanner.nextLine();
         }
     }
 
+    // Muestra el menú principal para los usuarios normales.
     private static void mostrarMenuUsuario() {
-        Usuario usuario = (Usuario) miembroActual;
+        Usuario usuario = (Usuario) miembroActual; // Convierte el miembro actual a Usuario.
         int opcion;
         do {
             System.out.println("\n--- MENU USUARIO (" + usuario.getNombre() + ") ---");
             System.out.println("Deuda Actual: " + String.format("%.2f", usuario.getDeuda()) + " pesos");
             System.out.println("1. Buscar Libro (por cualquier criterio)");
             System.out.println("2. Ver Libros Disponibles en MI Sede (" + usuario.getSedeUniversidad() + ")");
-            System.out.println("3. Ver TODOS los Libros Disponibles (sin filtro de sede)"); // NUEVO
+            System.out.println("3. Ver TODOS los Libros Disponibles (sin filtro de sede)");
             System.out.println("4. Prestar Libro");
             System.out.println("5. Devolver Libro");
             System.out.println("6. Ver Mis Libros Prestados");
-            System.out.println("7. Pagar Deuda"); // NUEVO
+            System.out.println("7. Pagar Deuda");
             System.out.println("8. Cambiar informacion personal");
             System.out.println("9. Cambiar Contrasena");
             System.out.println("0. Cerrar Sesion");
@@ -753,10 +732,10 @@ public class SistemaBiblioteca {
 
             try {
                 opcion = scanner.nextInt();
-                scanner.nextLine(); // Consumir salto de linea
+                scanner.nextLine();
 
                 switch (opcion) {
-                    case 1: // Buscar Libro
+                    case 1: // Buscar Libro.
                         System.out.print("Ingrese el termino de busqueda: ");
                         String query = scanner.nextLine();
                         System.out.print("Buscar por (nombre/autor/codigo/sede/idbiblioteca): ");
@@ -768,7 +747,7 @@ public class SistemaBiblioteca {
                             resultados.forEach(System.out::println);
                         }
                         break;
-                    case 2: // Ver Libros Disponibles en su Sede
+                    case 2: // Ver Libros Disponibles en su Sede.
                         List<Libro> disponiblesSede = bibliotecaSeleccionada
                                 .librosDisponibles(usuario.getSedeUniversidad());
                         if (disponiblesSede.isEmpty()) {
@@ -781,62 +760,53 @@ public class SistemaBiblioteca {
                             System.out.println("-------------------------------------------------------------------\n");
                         }
                         break;
-                    case 3: // Ver TODOS los Libros Disponibles (sin filtro de sede) - NUEVO
+                    case 3:
                         verTodosLibrosDisponibles();
-                        break;
-                    case 4: // Prestar Libro
+                        break; // Ver todos los libros disponibles.
+                    case 4: // Prestar Libro.
                         System.out.print("Ingrese el codigo del libro a prestar: ");
                         String codPrestamo = scanner.nextLine();
-                        // Importante: recargar el usuario para tener la deuda mas actualizada
                         Usuario userReloadedForLoan = (Usuario) Miembro
-                                .encontrarMiembroPorUsuario(usuario.getUsuario());
+                                .encontrarMiembroPorUsuario(usuario.getUsuario()); // Recarga el usuario para la deuda
+                                                                                   // actualizada.
                         if (userReloadedForLoan != null) {
                             System.out.println(
                                     userReloadedForLoan.solicitarPrestamo(codPrestamo, bibliotecaSeleccionada));
-                            miembroActual = userReloadedForLoan; // Actualizar el miembroActual para reflejar posibles
-                                                                 // cambios en la deuda/prestamos
+                            miembroActual = userReloadedForLoan;
                         } else {
                             System.err.println(
                                     "Error: No se pudo recargar la informacion del usuario para prestar el libro.");
                         }
                         break;
-                    case 5: // Devolver Libro
+                    case 5: // Devolver Libro.
                         System.out.print("Ingrese el codigo del libro a devolver: ");
                         String codDevolucion = scanner.nextLine();
-                        // Importante: recargar el usuario para tener la deuda mas actualizada
                         Usuario userReloadedForReturn = (Usuario) Miembro
-                                .encontrarMiembroPorUsuario(usuario.getUsuario());
+                                .encontrarMiembroPorUsuario(usuario.getUsuario()); // Recarga el usuario.
                         if (userReloadedForReturn != null) {
                             System.out.println(
                                     userReloadedForReturn.realizarDevolucion(codDevolucion, bibliotecaSeleccionada));
-                            miembroActual = userReloadedForReturn; // Actualizar el miembroActual para reflejar posibles
-                                                                   // cambios en la deuda/prestamos
+                            miembroActual = userReloadedForReturn;
                         } else {
                             System.err.println(
                                     "Error: No se pudo recargar la informacion del usuario para devolver el libro.");
                         }
                         break;
-                    case 6: // Ver Mis Libros Prestados
+                    case 6:
                         usuario.verMisLibrosPrestados();
-                        break;
-                    case 7: // Pagar Deuda - NUEVO
+                        break; // Ver sus libros prestados.
+                    case 7:
                         pagarDeuda(usuario);
-                        // Despues de pagar, recargamos el usuario para que el menu muestre la deuda
-                        // actualizada
                         miembroActual = Miembro.encontrarMiembroPorUsuario(usuario.getUsuario());
-                        break;
-                    case 8: // Cambiar informacion de contacto
+                        break; // Pagar deuda.
+                    case 8:
                         cambiarInfoPersonalUsuario(usuario);
-                        // Despues de cambiar, recargamos el usuario para que el menu muestre la info
-                        // actualizada
                         miembroActual = Miembro.encontrarMiembroPorUsuario(usuario.getUsuario());
-                        break;
-                    case 9: // Cambiar Contrasena
+                        break; // Cambiar información personal.
+                    case 9:
                         cambiarContrasenaUsuario(usuario);
-                        // Despues de cambiar, recargamos el usuario para que el menu muestre la info
-                        // actualizada (hash)
                         miembroActual = Miembro.encontrarMiembroPorUsuario(usuario.getUsuario());
-                        break;
+                        break; // Cambiar contraseña.
                     case 0:
                         System.out.println("Cerrando sesion de usuario.");
                         break;
@@ -845,12 +815,14 @@ public class SistemaBiblioteca {
                 }
             } catch (InputMismatchException e) {
                 System.out.println("Entrada invalida. Por favor, ingrese un numero.");
-                scanner.nextLine(); // Limpiar el buffer
+                scanner.nextLine();
                 opcion = -1;
             }
         } while (opcion != 0);
     }
 
+    // Permite a un usuario cambiar su información personal (nombre, apellido, sede,
+    // carrera).
     private static void cambiarInfoPersonalUsuario(Usuario usuario) {
         System.out.println("\n--- CAMBIAR INFORMACION PERSONAL DE USUARIO ---");
         System.out.print("Nuevo Tipo Doc (actual: " + usuario.getTipoDocumento() + ", dejar vacio para no cambiar): ");
@@ -874,46 +846,46 @@ public class SistemaBiblioteca {
         if (newCarrera.isEmpty())
             newCarrera = usuario.getCarrera();
 
-        usuario.cambiarInfoPersonal(newTipoDoc, newNombre, newApellido, newSedeUni, newCarrera);
+        usuario.cambiarInfoPersonal(newTipoDoc, newNombre, newApellido, newSedeUni, newCarrera); // Llama al método de
+                                                                                                 // Usuario.
         System.out.println("Informacion personal actualizada con exito.");
     }
 
+    // Permite a un usuario cambiar su contraseña.
     private static void cambiarContrasenaUsuario(Usuario usuario) {
         System.out.println("\n--- CAMBIAR CONTRASENA DE USUARIO ---");
         System.out.print("Ingrese la nueva contrasena: ");
         String newPass = scanner.nextLine();
-        usuario.cambiarContrasena(newPass);
+        usuario.cambiarContrasena(newPass); // Llama al método de Usuario.
         System.out.println("Contrasena actualizada con exito.");
     }
 
-    // Almacena el nombre de usuario del estudiante de prueba para poder
-    // referenciarlo
+    // Nombre de usuario del estudiante de prueba, usado en los tests.
     private static String userEstudianteTestUserName = null;
 
     // --- SECCION DE TESTS AUTOMATICOS ---
+    // Ejecuta una serie de pruebas para verificar las funcionalidades del sistema.
+    // Incluye pausas para revisión manual de los resultados.
     private static void ejecutarTestsAutomaticos() {
         pausar("Iniciando tests automaticos...");
 
-        // Usamos la primera biblioteca disponible para los tests
         List<Biblioteca> bibliotecas = Biblioteca.cargarTodasLasBibliotecas();
         if (bibliotecas.isEmpty()) {
             System.err.println("No hay bibliotecas para ejecutar tests. Asegurese que Bibliotecas.txt tiene datos.");
             return;
         }
-        Biblioteca testBiblioteca = bibliotecas.get(0);
+        Biblioteca testBiblioteca = bibliotecas.get(0); // Usa la primera biblioteca para los tests.
         System.out.println("Usando Biblioteca para tests: " + testBiblioteca.getNombreBiblioteca() + " (ID: "
                 + testBiblioteca.getId() + ")");
 
-        // Encontrar un admin y un usuario para los tests
         Admin adminTest = null;
         Usuario userEstudianteTest = null;
-        for (Miembro m : Miembro.cargarTodosLosMiembros()) {
+        for (Miembro m : Miembro.cargarTodosLosMiembros()) { // Busca el admin y el usuario de prueba.
             if (m instanceof Admin) {
                 adminTest = (Admin) m;
-            } else if (m instanceof Usuario && m.getRol() == 1 && m.getUsuario().equals("user3975")) { // Aseguramos que
-                                                                                                       // sea el de test
+            } else if (m instanceof Usuario && m.getRol() == 1 && m.getUsuario().equals("user3975")) {
                 userEstudianteTest = (Usuario) m;
-                userEstudianteTestUserName = m.getUsuario(); // Guarda el nombre de usuario para referencias futuras
+                userEstudianteTestUserName = m.getUsuario();
             }
             if (adminTest != null && userEstudianteTest != null)
                 break;
@@ -935,38 +907,31 @@ public class SistemaBiblioteca {
         // --- Tests del Administrador ---
         System.out.println("\n--- TESTS DE ADMINISTRADOR ---");
 
-        // Test 1: Agregar una nueva biblioteca
+        // Test 1: Agregar una nueva biblioteca.
         System.out.println("\n--- Test Admin: Agregar Biblioteca ---");
         System.out.println(adminTest.agregarBiblioteca(3, "Cali", "Biblioteca Sede Oeste"));
         pausar("Verificando...");
         System.out.println("Bibliotecas actuales:");
         Biblioteca.cargarTodasLasBibliotecas().forEach(System.out::println);
 
-        // Test 2: Agregar Libro
+        // Test 2: Agregar Libro.
         System.out.println("\n--- Test Admin: Agregar Libro ---");
-        String codLibro1 = procesarResultadoAgregarLibro(
-                adminTest.agregarLibro("El senor de los anillos", "J.R.R. Tolkien", "auto", 3, // Captura el
-                        // codigo
-                        // generado
-                        testBiblioteca.getId(), testBiblioteca.getSede()));
-        String codLibro2 = procesarResultadoAgregarLibro(
-                adminTest.agregarLibro("Cien Anos de Soledad", "Gabriel Garcia Marquez", "auto", 2, // Captura
-                        // el
-                        // codigo
-                        // generado
-                        testBiblioteca.getId(), testBiblioteca.getSede()));
+        String codLibro1 = procesarResultadoAgregarLibro(adminTest.agregarLibro("El senor de los anillos",
+                "J.R.R. Tolkien", "auto", 3, testBiblioteca.getId(), testBiblioteca.getSede()));
+        String codLibro2 = procesarResultadoAgregarLibro(adminTest.agregarLibro("Cien Anos de Soledad",
+                "Gabriel Garcia Marquez", "auto", 2, testBiblioteca.getId(), testBiblioteca.getSede()));
         pausar("Verificando libros agregados...");
         adminTest.verLibro(codLibro1);
         adminTest.verLibro(codLibro2);
 
-        // Test 3: Editar Libro
+        // Test 3: Editar Libro.
         System.out.println("\n--- Test Admin: Editar Libro ---");
         System.out.println(adminTest.editarLibro(codLibro1, "El senor de los anillos (Edicion Especial)",
                 "J.R.R. Tolkien", 4, testBiblioteca.getId(), testBiblioteca.getSede()));
         pausar("Verificando libro editado...");
         adminTest.verLibro(codLibro1);
 
-        // Test 4: Crear Usuario (otro estudiante)
+        // Test 4: Crear Usuario (otro estudiante).
         System.out.println("\n--- Test Admin: Crear Usuario ---");
         String userEstudiante2 = "estudTest" + stringAleatorio(3);
         String passEstudiante2 = stringAleatorio(6);
@@ -975,37 +940,31 @@ public class SistemaBiblioteca {
         pausar("Verificando usuario creado...");
         adminTest.verTodosUsuarios();
 
-        // Test 5: Editar Usuario
+        // Test 5: Editar Usuario.
         System.out.println("\n--- Test Admin: Editar Usuario ---");
-        // Re-cargar el AdminTest si su usuario fue cambiado / para asegurar que los
-        // metodos de AdminTest
-        // operen sobre el objeto más actualizado si hubo edicion que afectara a 'this'
-        adminTest = (Admin) Miembro.encontrarMiembroPorUsuario(adminTest.getUsuario());
-
+        adminTest = (Admin) Miembro.encontrarMiembroPorUsuario(adminTest.getUsuario()); // Recarga el admin.
         System.out.println(adminTest.editarUsuario(userEstudiante2, (byte) 1, 1122334455L, (byte) 1, "Maria", "Gomez",
                 userEstudiante2, "nuevaPass123", 0.0, "Medellin", "Arquitectura"));
         pausar("Verificando usuario editado...");
         System.out.println(Miembro.encontrarMiembroPorUsuario(userEstudiante2));
+        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario()); // Recarga
+                                                                                                            // el
+                                                                                                            // usuario
+                                                                                                            // de
+                                                                                                            // prueba.
 
-        // Es buena practica recargar userEstudianteTest si se edito para asegurar que
-        // la instancia en memoria
-        // del test refleje los ultimos cambios antes de usarla en otros tests
-        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario());
-
-        // Test 6: Eliminar Unidades de Libro
+        // Test 6: Eliminar Unidades de Libro.
         System.out.println("\n--- Test Admin: Eliminar Unidades de Libro ---");
         System.out.println(adminTest.eliminarLibro(codLibro2, 1));
         pausar("Verificando unidades restantes...");
         adminTest.verLibro(codLibro2);
 
-        // Test 7: Eliminar Libro Completo (sin prestamos)
-        // Agregamos el libro temporal y capturamos su codigo real
-        String codLibroTemp = procesarResultadoAgregarLibro(
-                adminTest.agregarLibro("Libro Temporal", "Autor Temp", "auto", 1,
-                        testBiblioteca.getId(), testBiblioteca.getSede()));
+        // Test 7: Eliminar Libro Completo (sin prestamos).
+        String codLibroTemp = procesarResultadoAgregarLibro(adminTest.agregarLibro("Libro Temporal", "Autor Temp",
+                "auto", 1, testBiblioteca.getId(), testBiblioteca.getSede()));
         pausar("Libro temporal creado para eliminacion: " + codLibroTemp);
         System.out.println("\n--- Test Admin: Eliminar Libro (completo si no esta prestado) ---");
-        System.out.println(adminTest.eliminarLibro(codLibroTemp, 1)); // Usar el codigo real
+        System.out.println(adminTest.eliminarLibro(codLibroTemp, 1));
         pausar("Verificando que el libro temporal ya no exista.");
         if (Libro.encontrarLibroPorCodigo(codLibroTemp) == null) {
             System.out.println("Exito: El libro temporal fue eliminado.");
@@ -1013,7 +972,7 @@ public class SistemaBiblioteca {
             System.err.println("Error: El libro temporal no fue eliminado.");
         }
 
-        // Test 8: Intento de eliminar usuario con libros prestados (debe fallar)
+        // Test 8: Intento de eliminar usuario con libros prestados (debe fallar).
         System.out.println("\n--- Test Admin: Eliminar Usuario con libros prestados (esperado que falle) ---");
         System.out.println(userEstudianteTest.solicitarPrestamo(codLibro1, testBiblioteca));
         pausar("Intentando eliminar usuario con libro prestado...");
@@ -1024,10 +983,11 @@ public class SistemaBiblioteca {
             System.err.println("Error: Usuario eliminado a pesar de tener libros prestados.");
         }
 
-        // Test 9: Intento de eliminar usuario con deuda (debe fallar)
+        // Test 9: Intento de eliminar usuario con deuda (debe fallar).
         System.out.println("\n--- Test Admin: Eliminar Usuario con deuda (esperado que falle) ---");
-        // Recargar userEstudianteTest para asegurar que los cambios de deuda se ven
-        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario());
+        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario()); // Recarga
+                                                                                                            // el
+                                                                                                            // usuario.
         userEstudianteTest.setDeuda(100.0);
         userEstudianteTest.guardar();
         pausar("Simulando deuda y intentando eliminar usuario...");
@@ -1038,31 +998,30 @@ public class SistemaBiblioteca {
             System.err.println("Error: Usuario eliminado a pesar de tener deuda.");
         }
 
-        // Eliminar deuda y devolver libro para poder completar el test de eliminacion
+        // Eliminar deuda y devolver libro para poder completar el test de eliminacion.
         pausar("Preparando usuario para eliminacion: saldando deuda y devolviendo libro...");
-        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario()); // Recargar
+        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario());
         userEstudianteTest.setDeuda(0.0);
         userEstudianteTest.guardar();
-        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario()); // Recargar
+        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario());
         System.out.println(userEstudianteTest.realizarDevolucion(codLibro1, testBiblioteca));
 
-        // Test 10: Eliminar Usuario exitosamente
+        // Test 10: Eliminar Usuario exitosamente.
         System.out.println("\n--- Test Admin: Eliminar Usuario exitosamente ---");
-        System.out.println(adminTest.eliminarUsuario(userEstudiante2)); // Eliminamos el otro estudiante, no user3975
+        System.out.println(adminTest.eliminarUsuario(userEstudiante2));
         pausar("Verificando que el usuario haya sido eliminado...");
         if (Miembro.encontrarMiembroPorUsuario(userEstudiante2) == null) {
             System.out.println("Exito: Usuario '" + userEstudiante2 + "' eliminado correctamente.");
         } else {
             System.err.println("Error: Usuario '" + userEstudiante2 + "' no fue eliminado.");
         }
-
         pausar("Listando todos los usuarios despues de manipulaciones...");
         adminTest.verTodosUsuarios();
 
         // --- Tests de Usuario ---
         System.out.println("\n--- TESTS DE USUARIO ---");
 
-        // Test 11: Usuario busca libro
+        // Test 11: Usuario busca libro.
         System.out.println("\n--- Test Usuario: Buscar Libro ---");
         pausar("Buscando 'anillos' por nombre...");
         List<Libro> busqueda = testBiblioteca.buscarLibro("anillos", "nombre");
@@ -1073,71 +1032,61 @@ public class SistemaBiblioteca {
             System.err.println("Error: No se encontraron libros con 'anillos'.");
         }
 
-        // Test 12: Usuario pide prestado un libro (ya lo hizo en Test 8)
+        // Test 12: Usuario pide prestado un libro (ya lo hizo en Test 8).
         System.out.println("\n--- Test Usuario: Ver mis libros prestados ---");
         userEstudianteTest.verMisLibrosPrestados();
 
-        // Test 13: Prestar multiples libros (limite 5 para estudiante)
+        // Test 13: Prestar multiples libros (limite 5 para estudiante).
         System.out.println("\n--- Test Usuario: Prestar multiples libros (Estudiante) ---");
-        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario()); // Recargar
+        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario());
         String prestamoResult2 = userEstudianteTest.solicitarPrestamo(codLibro2, testBiblioteca);
-        System.out.println(prestamoResult2); // 1er prestamo activo
+        System.out.println(prestamoResult2);
 
-        // Agregamos y prestamos mas libros, capturando los codigos generados
-        String codLibro3 = procesarResultadoAgregarLibro(
-                adminTest.agregarLibro("Nuevo Libro", "Autor Anonimo", "auto", 1, testBiblioteca.getId(),
-                        testBiblioteca.getSede()));
-        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario()); // Recargar
+        String codLibro3 = procesarResultadoAgregarLibro(adminTest.agregarLibro("Nuevo Libro", "Autor Anonimo", "auto",
+                1, testBiblioteca.getId(), testBiblioteca.getSede()));
+        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario());
         String prestamoResult3 = userEstudianteTest.solicitarPrestamo(codLibro3, testBiblioteca);
-        System.out.println(prestamoResult3); // 2do prestamo activo
+        System.out.println(prestamoResult3);
 
-        String codLibro4 = procesarResultadoAgregarLibro(
-                adminTest.agregarLibro("Cuarto Libro", "Autor Cuatro", "auto", 1, testBiblioteca.getId(),
-                        testBiblioteca.getSede()));
-        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario()); // Recargar
+        String codLibro4 = procesarResultadoAgregarLibro(adminTest.agregarLibro("Cuarto Libro", "Autor Cuatro", "auto",
+                1, testBiblioteca.getId(), testBiblioteca.getSede()));
+        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario());
         String prestamoResult4 = userEstudianteTest.solicitarPrestamo(codLibro4, testBiblioteca);
-        System.out.println(prestamoResult4); // 3er prestamo activo
+        System.out.println(prestamoResult4);
 
-        String codLibro5 = procesarResultadoAgregarLibro(
-                adminTest.agregarLibro("Quinto Libro", "Autor Cinco", "auto", 1, testBiblioteca.getId(),
-                        testBiblioteca.getSede()));
-        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario()); // Recargar
+        String codLibro5 = procesarResultadoAgregarLibro(adminTest.agregarLibro("Quinto Libro", "Autor Cinco", "auto",
+                1, testBiblioteca.getId(), testBiblioteca.getSede()));
+        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario());
         String prestamoResult5 = userEstudianteTest.solicitarPrestamo(codLibro5, testBiblioteca);
-        System.out.println(prestamoResult5); // 4to prestamo activo
-                                             // (limite: 5, ya lleva 4)
+        System.out.println(prestamoResult5);
 
         pausar("Intentando prestar un 5to libro (debe ser exitoso para estudiante)...");
-        String codLibro6 = procesarResultadoAgregarLibro(
-                adminTest.agregarLibro("Sexto Libro (para limite)", "Autor Seis", "auto", 1,
-                        testBiblioteca.getId(), testBiblioteca.getSede()));
-        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario()); // Recargar
+        String codLibro6 = procesarResultadoAgregarLibro(adminTest.agregarLibro("Sexto Libro (para limite)",
+                "Autor Seis", "auto", 1, testBiblioteca.getId(), testBiblioteca.getSede()));
+        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario());
         String prestamoResult6 = userEstudianteTest.solicitarPrestamo(codLibro6, testBiblioteca);
-        System.out.println(prestamoResult6); // 5to prestamo activo.
+        System.out.println(prestamoResult6);
 
         pausar("Intentando prestar un 6to libro (debe fallar para estudiante por limite)...");
-        String codLibro7 = procesarResultadoAgregarLibro(
-                adminTest.agregarLibro("Septimo Libro (para falla)", "Autor Siete", "auto", 1,
-                        testBiblioteca.getId(), testBiblioteca.getSede()));
-        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario()); // Recargar
+        String codLibro7 = procesarResultadoAgregarLibro(adminTest.agregarLibro("Septimo Libro (para falla)",
+                "Autor Siete", "auto", 1, testBiblioteca.getId(), testBiblioteca.getSede()));
+        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario());
         String prestamoResult7 = userEstudianteTest.solicitarPrestamo(codLibro7, testBiblioteca);
-        System.out.println(prestamoResult7); // Debe fallar el 6to.
+        System.out.println(prestamoResult7);
 
         pausar("Verificando libros prestados del estudiante...");
         userEstudianteTest.verMisLibrosPrestados();
 
-        // Test 14: Usuario devuelve libro
+        // Test 14: Usuario devuelve libro.
         System.out.println("\n--- Test Usuario: Devolver Libro ---");
-        // Recargar userEstudianteTest antes de devolver para asegurar un estado fresco
         userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario());
         System.out.println(userEstudianteTest.realizarDevolucion(codLibro2, testBiblioteca));
         pausar("Verificando libros prestados despues de la devolucion...");
         userEstudianteTest.verMisLibrosPrestados();
 
-        // Test 15: Usuario cambia informacion personal
+        // Test 15: Usuario cambia informacion personal.
         System.out.println("\n--- Test Usuario: Cambiar informacion personal ---");
-        // En Java se necesita recargar el objeto del usuario estudiante para que los
-        // cambios se reflejen
-        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario()); // Recargar
+        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario());
         if (userEstudianteTest != null) {
             userEstudianteTest.cambiarInfoPersonal((byte) 1, "Carlos", "Perez", "Bogota", "Historia");
             pausar("Verificando informacion personal actualizada (se reimprime el usuario)...");
@@ -1146,10 +1095,9 @@ public class SistemaBiblioteca {
             System.err.println("Error: No se pudo recargar el usuario para el test de cambio de informacion personal.");
         }
 
-        // Test 16: Usuario cambia contrasena
+        // Test 16: Usuario cambia contrasena.
         System.out.println("\n--- Test Usuario: Cambiar contrasena ---");
-        // Recargar el objeto userEstudianteTest antes de cambiar la contrasena tambien
-        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario()); // Recargar
+        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario());
         if (userEstudianteTest != null) {
             userEstudianteTest.cambiarContrasena("nuevaContrasenaUser");
             pausar("Contrasena cambiada (no visible por seguridad). Intentando login con la nueva contrasena para verificar.");
@@ -1163,52 +1111,48 @@ public class SistemaBiblioteca {
             System.err.println("Error: No se pudo recargar el usuario para el test de cambio de contrasena.");
         }
 
-        // Test 17: Pagar Deuda (se crea una deuda de prueba)
+        // Test 17: Pagar Deuda (se crea una deuda de prueba).
         System.out.println("\n--- Test Usuario: Pagar Deuda ---");
-        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario()); // Recargar
-        userEstudianteTest.setDeuda(50.00); // Establecer una deuda
+        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario());
+        userEstudianteTest.setDeuda(50.00);
         userEstudianteTest.guardar();
         System.out.println("Deuda antes de pagar: " + String.format("%.2f", userEstudianteTest.getDeuda()));
 
-        // Simulamos un pago
         pausar("Simulando pago de deuda. Escriba 50.00 cuando se le pida el monto.");
-        // Para que el test sea realmente automatico, no podemos usar scanner
-        // directamente.
-        // Simularemos la llamada al metodo
         System.out.println("Iniciando metodo pagarDeuda manualmente...");
-        // Reemplazar la llamada a scanner.nextDouble() para el test
-        simularPagoDeudaAutomatico(userEstudianteTest, 50.00);
+        simularPagoDeudaAutomatico(userEstudianteTest, 50.00); // Llama a la versión simulada del pago para el test.
 
-        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario()); // Recargar
+        userEstudianteTest = (Usuario) Miembro.encontrarMiembroPorUsuario(userEstudianteTest.getUsuario());
         if (userEstudianteTest.getDeuda() == 0.0) {
             System.out.println("Exito: La deuda fue pagada y se establecio en 0.00.");
         } else {
             System.err.println("Error: La deuda no se pago correctamente. Deuda actual: "
                     + String.format("%.2f", userEstudianteTest.getDeuda()));
         }
-
     }
 
+    // Muestra un mensaje y espera que el usuario presione Enter.
     private static void pausar(String mensaje) {
         System.out.println("\n" + mensaje + " (Presione Enter para continuar...)");
         scanner.nextLine();
     }
 
-    /**
-     * Helper para extraer el codigo del libro del mensaje de exito.
-     */
+    // Ayuda a extraer el código de un libro de un mensaje de éxito.
     private static String procesarResultadoAgregarLibro(String resultado) {
-        if (resultado.startsWith("Exito: Libro '")) {
-            // Ejemplo: "Exito: Libro 'El senor de los anillos' agregado con exito. Codigo:
-            // 1-M-1."
-            return resultado.substring(resultado.indexOf("Codigo: ") + "Codigo: ".length()).replace(".", "");
+        if (resultado.startsWith("Exito: Libro '")) { // Si el mensaje empieza con "Exito: Libro '".
+            return resultado.substring(resultado.indexOf("Codigo: ") + "Codigo: ".length()).replace(".", ""); // Extrae
+                                                                                                              // el
+                                                                                                              // código
+                                                                                                              // después
+                                                                                                              // de
+                                                                                                              // "Codigo:
+                                                                                                              // ".
         }
-        return null; // O lanzar una excepcion si es un error
+        return null;
     }
 
-    /**
-     * Version de pagarDeuda para uso en tests, simula la entrada del usuario.
-     */
+    // Versión especial de 'pagarDeuda' para los tests, donde el monto se pasa
+    // directamente.
     private static void simularPagoDeudaAutomatico(Usuario usuario, double montoPago) {
         System.out.println("\n--- PAGAR DEUDA (simulado para test) ---");
         if (usuario.getDeuda() <= 0) {
@@ -1216,8 +1160,7 @@ public class SistemaBiblioteca {
             return;
         }
         System.out.println("Tu deuda actual es: " + String.format("%.2f", usuario.getDeuda()) + " pesos.");
-        System.out.println("Simulando pago de: " + String.format("%.2f", montoPago) + " pesos."); // Mensaje para saber
-                                                                                                  // que se simulo
+        System.out.println("Simulando pago de: " + String.format("%.2f", montoPago) + " pesos.");
 
         if (montoPago <= 0) {
             System.out.println("El monto a pagar debe ser mayor que cero.");
@@ -1229,7 +1172,7 @@ public class SistemaBiblioteca {
         } else {
             usuario.setDeuda(usuario.getDeuda() - montoPago);
         }
-        usuario.guardar(); // Persistir el cambio de deuda
+        usuario.guardar();
         System.out.println("Pago realizado (simulado). Tu nueva deuda es: " + String.format("%.2f", usuario.getDeuda())
                 + " pesos.");
     }
